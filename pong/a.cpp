@@ -20,6 +20,7 @@
 const int TARGET_FPS = 60; // para controlar o framerate
 const std::chrono::duration<double> TARGET_FRAME_DURATION(1.0 / TARGET_FPS); // para controlar o framerate
 
+bool key_pressed[2] = {false, false};
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -28,7 +29,29 @@ void GLFW_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int
   if((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS)) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   }
+  
+  switch (key) {
+    case GLFW_KEY_DOWN:
+      if(action == GLFW_PRESS || action == GLFW_REPEAT) {
+        key_pressed[0] = true;
+        break;
+      }
+
+      key_pressed[0] = false;
+      break;
+    case GLFW_KEY_UP:
+      if(action == GLFW_PRESS || action == GLFW_REPEAT) {
+        key_pressed[1] = true;
+        break;
+      }
+
+      key_pressed[1] = false;
+      break;
+    default:
+      break;
+  }
 }
+
 
 class VulkanApp {
   public: 
@@ -94,26 +117,30 @@ class VulkanApp {
       };
 
       std::vector<Vertex> Vertices = {
-        Vertex({-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}), // top left
-        Vertex({0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}), // top right
-        Vertex({0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}),
+        Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+        Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+        Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
         
-        Vertex({-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}),
-        Vertex({ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}),
-        Vertex({-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f})
+        Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+        Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+        Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
       };
 
-      std::vector<Vertex> Triangulo = {
-        Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-        Vertex({-0.9f, -1.0f, 0.0f}, {1.0f, 1.0f}),
-        Vertex({-0.9f, -0.9f, 0.0f}, {0.0f, 1.0f})
+      std::vector<Vertex> Player = {
+        Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+        Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+        Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+        
+        Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+        Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+        Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
       };
 
       m_mesh.m_vertexBufferSize = sizeof(Vertices[0]) * Vertices.size();
       m_mesh.m_vb = m_vkCore.CreateVertexBuffer(Vertices.data(), m_mesh.m_vertexBufferSize);
 
-      m_mesh2.m_vertexBufferSize = sizeof(Triangulo[0]) * Triangulo.size();
-      m_mesh2.m_vb = m_vkCore.CreateVertexBuffer(Triangulo.data(), m_mesh2.m_vertexBufferSize);
+      m_mesh2.m_vertexBufferSize = sizeof(Player[0]) * Player.size();
+      m_mesh2.m_vb = m_vkCore.CreateVertexBuffer(Player.data(), m_mesh2.m_vertexBufferSize);
     }
 
     struct UniformData {
@@ -165,7 +192,7 @@ class VulkanApp {
 
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        // m_pPipeline->BindWithSet(m_numImages, &m_mesh, m_uniformBuffers, sizeof(UniformData));
+        m_pPipeline->BindWithSet(m_numImages, &m_mesh, m_uniformBuffers, sizeof(UniformData));
         m_pPipeline->Bind(m_cmdBufs[i], i);
         u32 VertexCount = 6;
         u32 InstaceCout = 1;
@@ -174,9 +201,9 @@ class VulkanApp {
         vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
 
        
-        // m_pPipeline->BindWithSet(m_numImages, &m_mesh2, m_uniformBuffers2, sizeof(UniformData));
+        m_pPipeline->BindWithSet(m_numImages, &m_mesh2, m_uniformBuffers2, sizeof(UniformData));
         m_pPipeline->Bind(m_cmdBufs[i], i);
-        vkCmdDraw(m_cmdBufs[i], 3 , InstaceCout, FirstVertex, FirstInstance);
+        vkCmdDraw(m_cmdBufs[i], VertexCount , InstaceCout, FirstVertex, FirstInstance);
 
         vkCmdEndRenderPass(m_cmdBufs[i]);
 
@@ -189,19 +216,39 @@ class VulkanApp {
 
     void UpdateUniformBuffers(uint32_t ImageIndex) {
       static float foo = 0.0f;
-      glm::mat4 Rotate = glm::mat4(1.0);
+      glm::mat4 TranslatePlayer = glm::mat4(1.0);
       glm::mat4 Translate = glm::mat4(1.0);
-      static float movement = 0.004f;
+
+      static float movementPlayer = 0.0f;
+
+      float move_value = 0.006f;
+
+      static float movement = 0.006f;
       Translate = glm::translate(Translate, glm::vec3(0.0f, foo, 1.0f));
+      TranslatePlayer = glm::translate(TranslatePlayer, glm::vec3(0.0f, movementPlayer, 1.0f));
+      
       // Rotate = glm::rotate(Rotate, glm::radians(foo), glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f)));
       foo += movement;
-      if (foo >= 1.5f) {
+      if (foo >= 1.7f) {
         movement = -movement;
-      } else if (foo <= -1.5f) {
+      } else if (foo <= 0.0f) {
         movement = -movement;
       }
+
+      if(key_pressed[0]) { //down
+        if(movementPlayer <= 1.7f) {
+          movementPlayer += move_value;
+        }
+      }
+
+       if(key_pressed[1]) { //up
+        if(movementPlayer >= 0.0f) {
+          movementPlayer -= move_value;
+        }
+      }
+
       m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate));
-      m_uniformBuffers2[ImageIndex].Update(m_device, &Rotate, sizeof(Rotate));
+      m_uniformBuffers2[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer));
     }
 
     GLFWwindow* m_pWindow = NULL;
