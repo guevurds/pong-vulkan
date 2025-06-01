@@ -5,25 +5,37 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
 #include "my_vulkan_simple_mash.h"
+
+struct Vertex {
+        Vertex(const glm::vec3& p, const glm::vec2& t) {
+          Pos = p;
+          Tex = t;
+        }
+
+        glm::vec3 Pos;
+        glm::vec2 Tex;
+      };
 
 namespace MyVK {
   class GraphicsPipeline {
     public:
-      GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, const SimpleMesh* pMesh, int NumImages, std::vector<BufferAndMemory>& UniformBuffer, int UniformDataSize);
+      GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffer, int UniformDataSize);
 
       ~GraphicsPipeline();
 
       void Bind(VkCommandBuffer CmdBuf, int ImageIndex, uint32_t dynamicOffset);
-      void BindWithSet(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
 
     private:
 
       void CreateDescriptorPool(int NumImages);
-      void CreateDescriptorSets(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
+      void CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
       void CreateDescriptorSetLayout(std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
       void AllocateDescriptorSets(int NumImages);
-      void UpdateDescriptorSets(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
+      void UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
 
       VkDevice m_device = NULL;
       VkPipeline m_pipeline = NULL;

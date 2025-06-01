@@ -653,9 +653,9 @@ namespace MyVK {
     return UniformBuffers;
   }
 
-  void BufferAndMemory::Update(VkDevice Device, const void* pData, size_t Size) {
+  void BufferAndMemory::Update(VkDevice Device, const void* pData, size_t Size, VkDeviceSize Offset) {
     void* pMem = NULL;
-    VkResult res = vkMapMemory(Device, m_mem, 0, Size, 0, &pMem);
+    VkResult res = vkMapMemory(Device, m_mem, Offset, Size, 0, &pMem);
     CHECK_VK_RESULT(res, "vkMapMemory"); 
     memcpy(pMem, pData, Size);
     vkUnmapMemory(Device, m_mem);

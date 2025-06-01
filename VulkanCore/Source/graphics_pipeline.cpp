@@ -7,12 +7,10 @@
 #include "my_vulkan_graphics_pipeline.h"
 
 namespace MyVK{
-  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, const SimpleMesh* pMesh, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
     m_device = Device;
 
-    if(pMesh) {
-      CreateDescriptorSets(NumImages, pMesh, UniformBuffers, UniformDataSize);
-    }
+    CreateDescriptorSets(NumImages, UniformBuffers, UniformDataSize); 
 
     VkPipelineShaderStageCreateInfo ShaderStageCreateInfo[2] = {
       {
@@ -29,8 +27,32 @@ namespace MyVK{
       }
     };
 
+    // Descreve como cada vértice está empacotado na struct Vertex:
+      VkVertexInputBindingDescription bindingDescription = {
+        .binding = 0,
+        .stride = sizeof(Vertex),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+      };
+
+    VkVertexInputAttributeDescription attributeDescriptions[2] = {};
+    // location = 0 → vec3 Pos
+    attributeDescriptions[0].binding  = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].offset   = offsetof(Vertex, Pos);
+    // location = 1 → vec2 Tex
+    attributeDescriptions[1].binding  = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format   = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset   = offsetof(Vertex, Tex);
+
+
     VkPipelineVertexInputStateCreateInfo VertexInputInfo {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .vertexBindingDescriptionCount = 1,
+      .pVertexBindingDescriptions = &bindingDescription,
+      .vertexAttributeDescriptionCount = 2,
+      .pVertexAttributeDescriptions = attributeDescriptions
     };
 
     VkPipelineInputAssemblyStateCreateInfo PipelineIACreateInfo = {
@@ -98,19 +120,12 @@ namespace MyVK{
       .pAttachments = &BlendAttachState
     };
 
+
     VkPipelineLayoutCreateInfo LayoutInfo = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      .setLayoutCount = 0,
-      .pSetLayouts = NULL
+      .setLayoutCount = 1,
+      .pSetLayouts = &m_descriptorSetLayout
     };
-
-    if(pMesh && pMesh->m_vb.m_buffer) {
-      LayoutInfo.setLayoutCount = 1;
-      LayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-    } else {
-      LayoutInfo.setLayoutCount = 0;
-      LayoutInfo.pSetLayouts = NULL;
-    }
 
     VkResult res = vkCreatePipelineLayout(m_device, &LayoutInfo, NULL, &m_pipelineLayout);
     CHECK_VK_RESULT(res, "vkCreatePipelineLayout\n");
@@ -159,27 +174,23 @@ namespace MyVK{
     }
   }
 
-  void GraphicsPipeline::BindWithSet(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
-    UpdateDescriptorSets(NumImages, pMesh, UniformBuffers, UniformDataSize);
-  }
-
-  void GraphicsPipeline::CreateDescriptorSets(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  void GraphicsPipeline::CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
     CreateDescriptorPool(NumImages);
     CreateDescriptorSetLayout(UniformBuffers, UniformDataSize);
     AllocateDescriptorSets(NumImages);
-    UpdateDescriptorSets(NumImages, pMesh, UniformBuffers, UniformDataSize);
+    UpdateDescriptorSets(NumImages, UniformBuffers, UniformDataSize);
   }
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
     printf("numero de images: %i", NumImages);
-    std::vector<VkDescriptorPoolSize> PoolSizes(2);
+    std::vector<VkDescriptorPoolSize> PoolSizes(1);
+
+    // PoolSizes[0] = {
+    //   .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    //   .descriptorCount = (u32)(NumImages)
+    // };
 
     PoolSizes[0] = {
-      .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-      .descriptorCount = (u32)(NumImages)
-    };
-
-    PoolSizes[1] = {
       .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
       .descriptorCount = (u32)(NumImages)
     };
@@ -201,15 +212,15 @@ namespace MyVK{
   void GraphicsPipeline::CreateDescriptorSetLayout(std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
     std::vector<VkDescriptorSetLayoutBinding> LayoutBindings;
 
-    VkDescriptorSetLayoutBinding VertexShaderLayoutBinding_VB = {
-      .binding = 0,
-      .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-      .descriptorCount = 1,
-      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-    };
+    // VkDescriptorSetLayoutBinding VertexShaderLayoutBinding_VB = {
+    //   .binding = 0,
+    //   .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    //   .descriptorCount = 1,
+    //   .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+    // };
 
     VkDescriptorSetLayoutBinding VertexShaderLayoutBinding_Uniform = {
-      .binding = 1,
+      .binding = 0,
       .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
       .descriptorCount = 1,
       .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
@@ -219,7 +230,7 @@ namespace MyVK{
       LayoutBindings.push_back(VertexShaderLayoutBinding_Uniform);
     }
 
-    LayoutBindings.push_back(VertexShaderLayoutBinding_VB);
+    // LayoutBindings.push_back(VertexShaderLayoutBinding_VB);
 
     VkDescriptorSetLayoutCreateInfo LayoutInfo = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -250,27 +261,11 @@ namespace MyVK{
     CHECK_VK_RESULT(res, "vkAllocateDescriptorSets");
   }
 
-  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
-    VkDescriptorBufferInfo BufferInfo_VB = {
-      .buffer = pMesh->m_vb.m_buffer,
-      .offset = 0,
-      .range = pMesh->m_vertexBufferSize // can also be VK_WHOLE_SIZE
-    };
+  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
 
     std::vector<VkWriteDescriptorSet> WriteDescriptorSet;
 
     for (size_t i = 0; i< NumImages; i++) {
-      WriteDescriptorSet.push_back(
-        VkWriteDescriptorSet {
-          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-          .dstSet = m_descriptorSets[i],
-          .dstBinding = 0,
-          .dstArrayElement = 0,
-          .descriptorCount = 1,
-          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-          .pBufferInfo = &BufferInfo_VB
-        }
-      );
 
       VkDescriptorBufferInfo BufferInfo_Uniform = {
         .buffer = UniformBuffers[i].m_buffer, 
@@ -282,7 +277,7 @@ namespace MyVK{
         VkWriteDescriptorSet{
           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
           .dstSet = m_descriptorSets[i],
-          .dstBinding = 1,
+          .dstBinding = 0,
           .dstArrayElement = 0,
           .descriptorCount = 1,
           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,

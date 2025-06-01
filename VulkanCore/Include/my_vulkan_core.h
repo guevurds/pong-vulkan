@@ -19,7 +19,7 @@ namespace MyVK {
       VkDeviceMemory m_mem = NULL;
       VkDeviceSize m_allocationSize = 0;
 
-      void Update(VkDevice Device, const void* pData, size_t Size);
+      void Update(VkDevice Device, const void* pData, size_t Size, VkDeviceSize Offset);
 
       void Destroy(VkDevice Device);
   };
