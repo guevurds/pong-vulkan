@@ -58,14 +58,15 @@ static Bot bot({ //Bot
   Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
 });
 
+
 static Object bola({ //bola
-  Vertex({-0.05f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-  Vertex({0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-  Vertex({-0.05f, -0.95f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({-0.05f, 0.0f, 0.0f}, {0.0f, 0.0f}), // top left
+  Vertex({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}), // top right
+  Vertex({-0.05f, -0.05f, 0.0f}, {1.0f, 1.0f}),
   
-  Vertex({0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-  Vertex({-0.05f, -0.95f, 0.0f}, {1.0f, 1.0f}),
-  Vertex({0.0f, -0.95f, 0.0f}, {0.0f, 1.0f})
+  Vertex({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}),
+  Vertex({-0.05f, -0.05f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({0.0f, -0.05f, 0.0f}, {0.0f, 1.0f})
 });
 
 static Player player({
