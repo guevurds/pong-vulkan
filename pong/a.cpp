@@ -69,10 +69,6 @@ class VulkanApp {
       for (int i = 0; i < m_uniformBuffers.size(); i++) {
         m_uniformBuffers[i].Destroy(m_device);
       }
-
-      for (int i = 0; i < m_uniformBuffers2.size(); i++) {
-        m_uniformBuffers2[i].Destroy(m_device);
-      }
     }
 
     void Init(const char* pAppName, GLFWwindow* pWindow) {
@@ -153,7 +149,6 @@ class VulkanApp {
 
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(2 * sizeof(UniformData));
-      m_uniformBuffers2= m_vkCore.CreateUniformBuffers(sizeof(UniformData));
     }
 
     void CreateShaders() {
@@ -162,7 +157,7 @@ class VulkanApp {
     }
 
     void CreatePipeline() {
-      m_pPipeline = new MyVK::GraphicsPipeline(m_device, m_pWindow, m_renderPass, m_vs, m_fs, &m_mesh, m_numImages, m_uniformBuffers, sizeof(UniformData));
+      m_pPipeline = new MyVK::GraphicsPipeline(m_device, m_pWindow, m_renderPass, m_vs, m_fs, m_numImages, m_uniformBuffers, sizeof(UniformData));
     }
 
     void RecordCommandBuffers() {
@@ -193,12 +188,9 @@ class VulkanApp {
         MyVK::BeginCommandBuffer(m_cmdBufs[i], VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
         
         RenderPassBeginInfo.framebuffer = m_frameBuffers[i];
-
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        // m_pPipeline->BindWithSet(m_numImages, &m_mesh, m_uniformBuffers, sizeof(UniformData));
         m_pPipeline->Bind(m_cmdBufs[i], i, 0);
-
         VkDeviceSize vbOffset = 0;
         vkCmdBindVertexBuffers(
           m_cmdBufs[i],
@@ -212,10 +204,9 @@ class VulkanApp {
         u32 InstaceCout = 1;
         u32 FirstVertex = 0;
         u32 FirstInstance = 0;
-        vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
 
-       
-        // m_pPipeline->BindWithSet(m_numImages, &m_mesh2, m_uniformBuffers2);
+        vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
+      
         m_pPipeline->Bind(m_cmdBufs[i], i, sizeof(UniformData));
         vkCmdBindVertexBuffers(
           m_cmdBufs[i],
@@ -268,8 +259,8 @@ class VulkanApp {
         }
       }
 
-      m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate));
-      m_uniformBuffers2[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer));
+      m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate), 0);
+      m_uniformBuffers[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer), sizeof(UniformData));
     }
 
     GLFWwindow* m_pWindow = NULL;
@@ -286,7 +277,6 @@ class VulkanApp {
     MyVK::SimpleMesh m_mesh;
     MyVK::SimpleMesh m_mesh2;
     std::vector<MyVK::BufferAndMemory> m_uniformBuffers;
-    std::vector<MyVK::BufferAndMemory> m_uniformBuffers2;
 };
 
 #define APP_NAME "Pong Vulkan"
