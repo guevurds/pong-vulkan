@@ -171,7 +171,7 @@ namespace MyVK{
   }
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
-
+    printf("numero de images: %i", NumImages);
     std::vector<VkDescriptorPoolSize> PoolSizes;
     VkDescriptorPoolSize DescPoolSize = {
       .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
