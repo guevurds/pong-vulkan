@@ -64,7 +64,10 @@ class VulkanApp {
       vkDestroyShaderModule(m_device, m_fs, NULL);
       delete m_pPipeline;
       vkDestroyRenderPass(m_device, m_renderPass, NULL);
-      m_mesh.Destroy(m_device);
+      
+      for (int i = 0; i < m_meshs.size(); i++) {
+        m_meshs[i].Destroy(m_device);
+      }
 
       for (int i = 0; i < m_uniformBuffers.size(); i++) {
         m_uniformBuffers[i].Destroy(m_device);
@@ -116,31 +119,39 @@ class VulkanApp {
         glm::vec2 Tex;
       };
 
-      std::vector<Vertex> Vertices = {
-        Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-        Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-        Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-        
-        Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-        Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-        Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+      std::vector<std::vector<Vertex>> objects{
+        { //Bot
+          Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+          Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+          Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+          
+          Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+          Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+          Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+        },
+        { //Player
+          Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+          Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+          Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+          
+          Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+          Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+          Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+        }
       };
 
-      std::vector<Vertex> Player = {
-        Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-        Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-        Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-        
-        Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-        Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-        Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
-      };
+      m_meshs.resize(objects.size());
 
-      m_mesh.m_vertexBufferSize = sizeof(Vertices[0]) * Vertices.size();
-      m_mesh.m_vb = m_vkCore.CreateVertexBuffer(Vertices.data(), m_mesh.m_vertexBufferSize);
+      for (int i=0; i<objects.size(); i++ ) {
+        m_meshs[i].m_vertexBufferSize = sizeof(objects[i][0]) * objects[i].size();
+        m_meshs[i].m_vb = m_vkCore.CreateVertexBuffer(objects[i].data(), m_meshs[i].m_vertexBufferSize);
+      }
 
-      m_mesh2.m_vertexBufferSize = sizeof(Player[0]) * Player.size();
-      m_mesh2.m_vb = m_vkCore.CreateVertexBuffer(Player.data(), m_mesh2.m_vertexBufferSize);
+      // m_mesh.m_vertexBufferSize = sizeof(Vertices[0]) * Vertices.size();
+      // m_mesh.m_vb = m_vkCore.CreateVertexBuffer(Vertices.data(), m_mesh.m_vertexBufferSize);
+
+      // m_mesh2.m_vertexBufferSize = sizeof(Player[0]) * Player.size();
+      // m_mesh2.m_vb = m_vkCore.CreateVertexBuffer(Player.data(), m_mesh2.m_vertexBufferSize);
     }
 
     struct UniformData {
@@ -190,13 +201,16 @@ class VulkanApp {
         RenderPassBeginInfo.framebuffer = m_frameBuffers[i];
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        m_pPipeline->Bind(m_cmdBufs[i], i, 0);
-        VkDeviceSize vbOffset = 0;
-        vkCmdBindVertexBuffers(
+ 
+
+        for (int mesh=0; mesh < m_meshs.size(); mesh++) {
+          m_pPipeline->Bind(m_cmdBufs[i], i, mesh * sizeof(UniformData));
+          VkDeviceSize vbOffset = 0;
+          vkCmdBindVertexBuffers(
           m_cmdBufs[i],
           /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
           /* bindingCount = */ 1,
-          &m_mesh.m_vb.m_buffer,                       // VkBuffer do primeiro mesh
+          &m_meshs[mesh].m_vb.m_buffer,                       // VkBuffer do primeiro mesh
           &vbOffset
         );
 
@@ -206,16 +220,8 @@ class VulkanApp {
         u32 FirstInstance = 0;
 
         vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
-      
-        m_pPipeline->Bind(m_cmdBufs[i], i, sizeof(UniformData));
-        vkCmdBindVertexBuffers(
-          m_cmdBufs[i],
-          /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
-          /* bindingCount = */ 1,
-          &m_mesh2.m_vb.m_buffer,                       // VkBuffer do primeiro mesh
-          &vbOffset
-        );
-        vkCmdDraw(m_cmdBufs[i], VertexCount , InstaceCout, FirstVertex, FirstInstance);
+
+        }
 
         vkCmdEndRenderPass(m_cmdBufs[i]);
 
@@ -274,8 +280,7 @@ class VulkanApp {
     VkShaderModule m_vs;
     VkShaderModule m_fs;
     MyVK::GraphicsPipeline* m_pPipeline = NULL;
-    MyVK::SimpleMesh m_mesh;
-    MyVK::SimpleMesh m_mesh2;
+    std::vector<MyVK::SimpleMesh> m_meshs;
     std::vector<MyVK::BufferAndMemory> m_uniformBuffers;
 };
 
