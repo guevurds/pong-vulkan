@@ -69,6 +69,10 @@ class VulkanApp {
       for (int i = 0; i < m_uniformBuffers.size(); i++) {
         m_uniformBuffers[i].Destroy(m_device);
       }
+
+      for (int i = 0; i < m_uniformBuffers2.size(); i++) {
+        m_uniformBuffers2[i].Destroy(m_device);
+      }
     }
 
     void Init(const char* pAppName, GLFWwindow* pWindow) {
