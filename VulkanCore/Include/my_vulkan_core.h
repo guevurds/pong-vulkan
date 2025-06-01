@@ -24,12 +24,21 @@ namespace MyVK {
       void Destroy(VkDevice Device);
   };
 
+   struct Texture {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkImageView view;
+    VkSampler sampler;
+  };
+
   class VulkanCore {
     public:
       VulkanCore();
       ~VulkanCore();
 
       void Init(const char* pAppName, GLFWwindow* pWindow);
+
+      Texture LoadTexture(VkCommandPool commandPool, VkQueue graphicsQueue, const char* filePath);
 
       VkRenderPass CreateSimpleRenderPass();
 
