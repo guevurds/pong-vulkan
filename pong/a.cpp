@@ -17,10 +17,10 @@
 #include "my_vulkan_graphics_pipeline.h"
 #include "my_vulkan_simple_mash.h"
 
+#include "objects.h"
+
 const int TARGET_FPS = 60; // para controlar o framerate
 const std::chrono::duration<double> TARGET_FRAME_DURATION(1.0 / TARGET_FPS); // para controlar o framerate
-
-bool key_pressed[2] = {false, false};
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -64,10 +64,10 @@ class VulkanApp {
       vkDestroyShaderModule(m_device, m_fs, NULL);
       delete m_pPipeline;
       vkDestroyRenderPass(m_device, m_renderPass, NULL);
-      
-      for (int i = 0; i < m_meshs.size(); i++) {
-        m_meshs[i].Destroy(m_device);
-      }
+
+      // for (int i = 0; i < m_meshs.size(); i++) {
+      //   m_meshs[i].Destroy(m_device);
+      // }
 
       for (int i = 0; i < m_uniformBuffers.size(); i++) {
         m_uniformBuffers[i].Destroy(m_device);
@@ -109,57 +109,41 @@ class VulkanApp {
     }
 
     void CreateVertexBuffer() {
-      struct Vertex {
-        Vertex(const glm::vec3& p, const glm::vec2& t) {
-          Pos = p;
-          Tex = t;
-        }
+     
 
-        glm::vec3 Pos;
-        glm::vec2 Tex;
-      };
-
-      std::vector<std::vector<Vertex>> objects{
-        { //Bot
-          Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-          Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-          Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+      // std::vector<std::vector<Vertex>> objects{
+      //   { //Bot
+      //     Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+      //     Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+      //     Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
           
-          Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-          Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-          Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
-        },
-        { //Player
-          Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-          Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-          Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+      //     Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+      //     Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+      //     Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+      //   },
+      //   { //Player
+      //     Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
+      //     Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
+      //     Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
           
-          Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-          Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-          Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
-        }
-      };
+      //     Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
+      //     Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+      //     Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+      //   }
+      // };
 
-      m_meshs.resize(objects.size());
+      // m_meshs.resize(objects.size());
 
-      for (int i=0; i<objects.size(); i++ ) {
-        m_meshs[i].m_vertexBufferSize = sizeof(objects[i][0]) * objects[i].size();
-        m_meshs[i].m_vb = m_vkCore.CreateVertexBuffer(objects[i].data(), m_meshs[i].m_vertexBufferSize);
-      }
+      // for (int i=0; i<objects.size(); i++ ) {
+      //   m_meshs[i].m_vertexBufferSize = sizeof(objects[i][0]) * objects[i].size();
+      //   m_meshs[i].m_vb = m_vkCore.CreateVertexBuffer(objects[i].data(), m_meshs[i].m_vertexBufferSize);
+      // }
 
-      // m_mesh.m_vertexBufferSize = sizeof(Vertices[0]) * Vertices.size();
-      // m_mesh.m_vb = m_vkCore.CreateVertexBuffer(Vertices.data(), m_mesh.m_vertexBufferSize);
-
-      // m_mesh2.m_vertexBufferSize = sizeof(Player[0]) * Player.size();
-      // m_mesh2.m_vb = m_vkCore.CreateVertexBuffer(Player.data(), m_mesh2.m_vertexBufferSize);
+      Scene::Object::createVertexBufferAll(m_device, m_vkCore);
     }
 
-    struct UniformData {
-      glm::mat4 WVP;
-    };
-
     void CreateUniformBuffers() {
-      m_uniformBuffers= m_vkCore.CreateUniformBuffers(2 * sizeof(UniformData));
+      m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::Object::getObjectsNumber() * sizeof(UniformData));
     }
 
     void CreateShaders() {
@@ -201,27 +185,27 @@ class VulkanApp {
         RenderPassBeginInfo.framebuffer = m_frameBuffers[i];
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
- 
+        Scene::Object::recordCommandBufferAll(m_pPipeline, m_cmdBufs, i);
 
-        for (int mesh=0; mesh < m_meshs.size(); mesh++) {
-          m_pPipeline->Bind(m_cmdBufs[i], i, mesh * sizeof(UniformData));
-          VkDeviceSize vbOffset = 0;
-          vkCmdBindVertexBuffers(
-          m_cmdBufs[i],
-          /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
-          /* bindingCount = */ 1,
-          &m_meshs[mesh].m_vb.m_buffer,                       // VkBuffer do primeiro mesh
-          &vbOffset
-        );
+        // for (int mesh=0; mesh < m_meshs.size(); mesh++) {
+        //   m_pPipeline->Bind(m_cmdBufs[i], i, mesh * sizeof(UniformData));
+        //   VkDeviceSize vbOffset = 0;
+        //   vkCmdBindVertexBuffers(
+        //   m_cmdBufs[i],
+        //   /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
+        //   /* bindingCount = */ 1,
+        //   &m_meshs[mesh].m_vb.m_buffer,                       // VkBuffer do primeiro mesh
+        //   &vbOffset
+        // );
 
-        u32 VertexCount = 6;
-        u32 InstaceCout = 1;
-        u32 FirstVertex = 0;
-        u32 FirstInstance = 0;
+        // u32 VertexCount = 6;
+        // u32 InstaceCout = 1;
+        // u32 FirstVertex = 0;
+        // u32 FirstInstance = 0;
 
-        vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
+        // vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
 
-        }
+        // }
 
         vkCmdEndRenderPass(m_cmdBufs[i]);
 
@@ -233,40 +217,42 @@ class VulkanApp {
     }
 
     void UpdateUniformBuffers(uint32_t ImageIndex) {
-      static float foo = 0.0f;
-      glm::mat4 TranslatePlayer = glm::mat4(1.0);
-      glm::mat4 Translate = glm::mat4(1.0);
+      // static float foo = 0.0f;
+      // glm::mat4 TranslatePlayer = glm::mat4(1.0);
+      // glm::mat4 Translate = glm::mat4(1.0);
 
-      static float movementPlayer = 0.0f;
+      // static float movementPlayer = 0.0f;
 
-      float move_value = 0.006f;
+      // float move_value = 0.006f;
 
-      static float movement = 0.006f;
-      Translate = glm::translate(Translate, glm::vec3(0.0f, foo, 1.0f));
-      TranslatePlayer = glm::translate(TranslatePlayer, glm::vec3(0.0f, movementPlayer, 1.0f));
+      // static float movement = 0.006f;
+      // Translate = glm::translate(Translate, glm::vec3(0.0f, foo, 1.0f));
+      // TranslatePlayer = glm::translate(TranslatePlayer, glm::vec3(0.0f, movementPlayer, 1.0f));
       
-      // Rotate = glm::rotate(Rotate, glm::radians(foo), glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f)));
-      foo += movement;
-      if (foo >= 1.7f) {
-        movement = -movement;
-      } else if (foo <= 0.0f) {
-        movement = -movement;
-      }
+      // // Rotate = glm::rotate(Rotate, glm::radians(foo), glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f)));
+      // foo += movement;
+      // if (foo >= 1.7f) {
+      //   movement = -movement;
+      // } else if (foo <= 0.0f) {
+      //   movement = -movement;
+      // }
 
-      if(key_pressed[0]) { //down
-        if(movementPlayer <= 1.7f) {
-          movementPlayer += move_value;
-        }
-      }
+      // if(key_pressed[0]) { //down
+      //   if(movementPlayer <= 1.7f) {
+      //     movementPlayer += move_value;
+      //   }
+      // }
 
-       if(key_pressed[1]) { //up
-        if(movementPlayer >= 0.0f) {
-          movementPlayer -= move_value;
-        }
-      }
+      //  if(key_pressed[1]) { //up
+      //   if(movementPlayer >= 0.0f) {
+      //     movementPlayer -= move_value;
+      //   }
+      // }
 
-      m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate), 0);
-      m_uniformBuffers[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer), sizeof(UniformData));
+      // m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate), 0);
+      // m_uniformBuffers[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer), sizeof(UniformData));
+
+      Scene::Object::updateAll(m_uniformBuffers[ImageIndex]);
     }
 
     GLFWwindow* m_pWindow = NULL;
