@@ -7,7 +7,8 @@ struct VertexData {
 
 layout (binding = 0) readonly buffer Vertices {VertexData data[];} in_Vertices;
 
-layout (binding = 1) uniform UniformBuffer {
+// ALTERAÇÃO MÍNIMA: adiciona “std140” no uniform block
+layout (std140, binding = 1) uniform UniformBuffer {
   mat4 WVP;
 } ubo;
 

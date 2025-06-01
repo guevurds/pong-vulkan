@@ -152,7 +152,7 @@ class VulkanApp {
     };
 
     void CreateUniformBuffers() {
-      m_uniformBuffers= m_vkCore.CreateUniformBuffers(sizeof(UniformData));
+      m_uniformBuffers= m_vkCore.CreateUniformBuffers(2 * sizeof(UniformData));
       m_uniformBuffers2= m_vkCore.CreateUniformBuffers(sizeof(UniformData));
     }
 
@@ -196,8 +196,18 @@ class VulkanApp {
 
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        m_pPipeline->BindWithSet(m_numImages, &m_mesh, m_uniformBuffers, sizeof(UniformData));
-        m_pPipeline->Bind(m_cmdBufs[i], i);
+        // m_pPipeline->BindWithSet(m_numImages, &m_mesh, m_uniformBuffers, sizeof(UniformData));
+        m_pPipeline->Bind(m_cmdBufs[i], i, 0);
+
+        VkDeviceSize vbOffset = 0;
+        vkCmdBindVertexBuffers(
+          m_cmdBufs[i],
+          /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
+          /* bindingCount = */ 1,
+          &m_mesh.m_vb.m_buffer,                       // VkBuffer do primeiro mesh
+          &vbOffset
+        );
+
         u32 VertexCount = 6;
         u32 InstaceCout = 1;
         u32 FirstVertex = 0;
@@ -205,8 +215,15 @@ class VulkanApp {
         vkCmdDraw(m_cmdBufs[i], VertexCount, InstaceCout, FirstVertex, FirstInstance);
 
        
-        m_pPipeline->BindWithSet(m_numImages, &m_mesh2, m_uniformBuffers2, sizeof(UniformData));
-        m_pPipeline->Bind(m_cmdBufs[i], i);
+        // m_pPipeline->BindWithSet(m_numImages, &m_mesh2, m_uniformBuffers2);
+        m_pPipeline->Bind(m_cmdBufs[i], i, sizeof(UniformData));
+        vkCmdBindVertexBuffers(
+          m_cmdBufs[i],
+          /* firstBinding = */ 0,                    // conforme o binding que você definiu no pipeline
+          /* bindingCount = */ 1,
+          &m_mesh2.m_vb.m_buffer,                       // VkBuffer do primeiro mesh
+          &vbOffset
+        );
         vkCmdDraw(m_cmdBufs[i], VertexCount , InstaceCout, FirstVertex, FirstInstance);
 
         vkCmdEndRenderPass(m_cmdBufs[i]);
