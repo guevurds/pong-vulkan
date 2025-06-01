@@ -14,7 +14,7 @@ namespace MyVK {
 
       ~GraphicsPipeline();
 
-      void Bind(VkCommandBuffer CmdBuf, int ImageIndex);
+      void Bind(VkCommandBuffer CmdBuf, int ImageIndex, uint32_t dynamicOffset);
       void BindWithSet(int NumImages, const SimpleMesh* pMesh, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
 
     private:

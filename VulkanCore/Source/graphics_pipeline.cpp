@@ -146,7 +146,7 @@ namespace MyVK{
     vkDestroyPipeline(m_device, m_pipeline, NULL);
   }
 
-  void GraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int ImageIndex) {
+  void GraphicsPipeline::Bind(VkCommandBuffer CmdBuf, int ImageIndex, uint32_t dynamicOffset) {
     vkCmdBindPipeline(CmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
     if(m_descriptorSets.size() > 0) {
@@ -154,8 +154,8 @@ namespace MyVK{
         0, // firstSet
         1, // descriptorSetCount
         &m_descriptorSets[ImageIndex],
-        0, // dynamicOffsetCount
-        NULL); //pDynamicOffsets
+        1, // dynamicOffsetCount
+        &dynamicOffset); //pDynamicOffsets
     }
   }
 
@@ -172,9 +172,15 @@ namespace MyVK{
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
     printf("numero de images: %i", NumImages);
-    std::vector<VkDescriptorPoolSize> PoolSizes;
-    VkDescriptorPoolSize DescPoolSize = {
-      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    std::vector<VkDescriptorPoolSize> PoolSizes(2);
+
+    PoolSizes[0] = {
+      .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+      .descriptorCount = (u32)(NumImages)
+    };
+
+    PoolSizes[1] = {
+      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
       .descriptorCount = (u32)(NumImages)
     };
 
@@ -183,8 +189,8 @@ namespace MyVK{
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .flags = 0,
       .maxSets = (u32)NumImages,
-      .poolSizeCount = 1,
-      .pPoolSizes = &DescPoolSize
+      .poolSizeCount = (u32)PoolSizes.size(),
+      .pPoolSizes = PoolSizes.data()
     };
 
     VkResult res = vkCreateDescriptorPool(m_device, &PoolInfo, NULL, &m_descriptorPool);
@@ -204,7 +210,7 @@ namespace MyVK{
 
     VkDescriptorSetLayoutBinding VertexShaderLayoutBinding_Uniform = {
       .binding = 1,
-      .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+      .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
       .descriptorCount = 1,
       .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
     };
@@ -279,7 +285,7 @@ namespace MyVK{
           .dstBinding = 1,
           .dstArrayElement = 0,
           .descriptorCount = 1,
-          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
           .pBufferInfo = &BufferInfo_Uniform
 
         }
