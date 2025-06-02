@@ -8,6 +8,9 @@
 #include "my_vulkan_simple_mash.h"
 #include "my_vulkan_graphics_pipeline.h"
 
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+
 // struct Vertex {
 //   Vertex(const glm::vec3& p, const glm::vec2& t) {
 //     Pos = p;
