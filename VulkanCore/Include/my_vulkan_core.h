@@ -24,11 +24,9 @@ namespace MyVK {
       void Destroy(VkDevice Device);
   };
 
-   struct Texture {
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView view;
-    VkSampler sampler;
+  struct ImageAndMemory {
+    VkImage m_image = VK_NULL_HANDLE;
+    VkDeviceMemory m_mem = VK_NULL_HANDLE;
   };
 
   class VulkanCore {
@@ -38,7 +36,9 @@ namespace MyVK {
 
       void Init(const char* pAppName, GLFWwindow* pWindow);
 
-      Texture LoadTexture(VkCommandPool commandPool, VkQueue graphicsQueue, const char* filePath);
+      ImageAndMemory LoadTexture(const char* filename);
+      void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+      void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
       VkRenderPass CreateSimpleRenderPass();
 

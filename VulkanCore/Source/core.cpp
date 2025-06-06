@@ -1,11 +1,15 @@
 #include <vector>
 #include <assert.h>
+#include <iostream>
 
 #include "my_types.h"
 #include "my_util.h"
 #include "my_vulkan_core.h"
 #include "my_vulkan_util.h"
 #include "my_vulkan_wrapper.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace MyVK {
 
@@ -660,4 +664,120 @@ namespace MyVK {
     memcpy(pMem, pData, Size);
     vkUnmapMemory(Device, m_mem);
   }
+
+
+  ImageAndMemory VulkanCore::LoadTexture(const char* filename) {
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    if(!pixels) {
+      throw std::runtime_error("Failed to load texture image!");
+    }
+
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    // Staging buffer --- buffer temporario
+    BufferAndMemory stagingBuffer = CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    stagingBuffer.Update(m_device, pixels, (size_t)imageSize, 0);
+    stbi_image_free(pixels);
+
+    //Criar imagem
+    VkImageCreateInfo imageInfo = {
+      .sType= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .imageType = VK_IMAGE_TYPE_2D,
+      .format = VK_FORMAT_R8G8B8A8_SRGB,
+      .extent = { (uint32_t)texWidth, (uint32_t)texHeight, 1},
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .tiling = VK_IMAGE_TILING_OPTIMAL,
+      .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    ImageAndMemory textureImage;
+    VkResult res = vkCreateImage(m_device, &imageInfo, nullptr, &textureImage.m_image);
+    CHECK_VK_RESULT(res, "vkCreateImage");
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_device, textureImage.m_image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .allocationSize = memRequirements.size,
+      .memoryTypeIndex = GetMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    res = vkAllocateMemory(m_device, &allocInfo, nullptr, &textureImage.m_mem);
+    CHECK_VK_RESULT(res, "vkAllocateMemory (texture)");
+
+    res = vkBindImageMemory(m_device, textureImage.m_image, textureImage.m_mem, 0);
+    CHECK_VK_RESULT(res, "vkBindImageMemory (texture)");
+
+    //Transição e cópia
+    TransitionImageLayout(textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    CopyBufferToImage(stagingBuffer.m_buffer, textureImage.m_image, (uint32_t)texWidth, (uint32_t)texHeight);
+
+    TransitionImageLayout(textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    stagingBuffer.Destroy(m_device);
+
+    return textureImage;
+  }
+
+  void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    VkCommandBuffer cmd = m_copyCmdBuf;
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VkImageMemoryBarrier barrier = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .oldLayout = oldLayout,
+      .newLayout = newLayout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = image,
+      .subresourceRange = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = 1,
+        .baseArrayLayer = 0,
+        .layerCount = 1
+      }
+    };
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = 0;
+
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vkEndCommandBuffer(cmd);
+    m_queue.SubmitSync(cmd);
+  }
+
+  void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer cmd = m_copyCmdBuf;
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VkBufferImageCopy region = {
+      .bufferOffset = 0,
+      .bufferRowLength = 0,
+      .bufferImageHeight = 0,
+      .imageSubresource = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .mipLevel = 0,
+        .baseArrayLayer = 0,
+        .layerCount = 1
+      }, 
+      .imageOffset = {0, 0, 0},
+      .imageExtent = {width, height, 1}
+    };
+
+    vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkEndCommandBuffer(cmd);
+    m_queue.SubmitSync(cmd);
+  }
+
+
 }
