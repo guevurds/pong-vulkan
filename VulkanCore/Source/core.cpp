@@ -256,6 +256,7 @@ namespace MyVK {
     VkPhysicalDeviceFeatures DeviceFeatures = {0};
     DeviceFeatures.geometryShader = VK_TRUE;
     DeviceFeatures.tessellationShader = VK_TRUE;
+    DeviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo DeviceCreateInfo = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -748,11 +749,16 @@ namespace MyVK {
     textureImage.m_view = CreateImageView(m_device, textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
     textureImage.m_sampler = CreateTextureSampler();
 
+    // vkEndCommandBuffer(m_copyCmdBuf_texture);
+    // m_queue.SubmitSync(m_copyCmdBuf_texture);
+    m_queue.WaitIdle();
+
     return textureImage;
   }
 
   void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
+    vkResetCommandBuffer(cmd, 0);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkImageMemoryBarrier barrier = {
@@ -778,11 +784,13 @@ namespace MyVK {
 
     vkEndCommandBuffer(cmd);
     m_queue.SubmitSync(cmd);
+    m_queue.WaitIdle();
   }
 
   void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
-    printf("VkCommandPool in CopyBuffer is %p", (void *)&m_cmdBufPool_texture);
+    // printf("VkCommandPool in CopyBuffer is %p", (void *)&m_cmdBufPool_texture);
+    vkResetCommandBuffer(cmd, 0);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkBufferImageCopy region = {
@@ -845,6 +853,10 @@ namespace MyVK {
   }
 
   VkDescriptorImageInfo VulkanCore::MakeDescriptorImageInfo(const ImageAndMemory& imageAndMemory) {
+    // if (imageAndMemory.m_view == VK_NULL_HANDLE || imageAndMemory.m_sampler == VK_NULL_HANDLE) {
+    //   printf("deu ruim no MakeDescriptorImageInfo");
+    // }
+
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView = imageAndMemory.m_view;

@@ -11,6 +11,8 @@
 #include "my_vulkan_util.h"
 #include "my_vulkan_shader.h"
 
+#include "objects_quantity.h"
+
 namespace MyVK {
   struct Shader {
     std::vector<u32> SPIRV;
@@ -152,6 +154,15 @@ namespace MyVK {
     if(!ReadFile(pFilename, Source)) {
       assert(0);
     }
+
+    size_t versionPos = Source.find("#version");
+    size_t versionLineEnd = Source.find("\n", versionPos);
+
+    std::string headerDefine = "#define MAX_TEXTURES " + std::to_string(3) + "\n";
+
+    // printf("version line end %d\n", versionLineEnd);
+
+    Source.insert(versionLineEnd+1, headerDefine);
 
     Shader ShaderModule;
 

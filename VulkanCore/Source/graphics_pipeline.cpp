@@ -283,6 +283,15 @@ namespace MyVK{
 
     std::vector<VkWriteDescriptorSet> WriteDescriptorSet;
 
+    for (int i = 0; i < NumImages; ++i) {
+      assert(ImageInfos[0].imageView != VK_NULL_HANDLE);
+      assert(ImageInfos[0].sampler != VK_NULL_HANDLE);
+      assert(m_descriptorSets[i] != VK_NULL_HANDLE);
+    }
+
+    // printf("numImages %d\n", NumImages);
+    // printf("ImageInfos length %d\n", ImageInfos.size());
+
     for (size_t i = 0; i< NumImages; i++) {
 
       VkDescriptorBufferInfo BufferInfo_Uniform = {
@@ -304,15 +313,19 @@ namespace MyVK{
         }
       );
 
+      if (ImageInfos[0].imageView == VK_NULL_HANDLE || ImageInfos[0].sampler == VK_NULL_HANDLE) {
+        printf("deu ruim no UpdateDescriptorSets");
+      }
+
       WriteDescriptorSet.push_back(
         VkWriteDescriptorSet{
           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
           .dstSet = m_descriptorSets[i],
           .dstBinding = 1,
           .dstArrayElement = 0,
-          .descriptorCount = 1,
+          .descriptorCount = 3,
           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-          .pImageInfo = ImageInfos.data()
+          .pImageInfo = &ImageInfos[0]
         }
       );
     }

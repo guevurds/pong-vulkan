@@ -3,11 +3,11 @@
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 0) out vec4 out_Color;
 
-layout(binding = 1) uniform sampler2D uTexture;
+layout(binding = 1) uniform sampler2D uTexture[MAX_TEXTURES]; //definida em tempo de execução pelo script shader.cpp
 
 void main() {
     // Busca a cor da textura
-    vec4 texColor = texture(uTexture, fragTexCoord);
+    vec4 texColor = texture(uTexture[0], fragTexCoord);
 
     // Se alpha da textura for 0 (sem textura real), cai no branco
     if (texColor.a == 0.0) {

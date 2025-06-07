@@ -16,11 +16,14 @@
 #include "my_vulkan_shader.h"
 #include "my_vulkan_graphics_pipeline.h"
 #include "my_vulkan_simple_mash.h"
+#include "objects_quantity.h"
 
 #include "objects.h"
 
 const int TARGET_FPS = 60; // para controlar o framerate
 const std::chrono::duration<double> TARGET_FRAME_DURATION(1.0 / TARGET_FPS); // para controlar o framerate
+
+int max_tex;
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -82,6 +85,7 @@ class VulkanApp {
       m_pQueue = m_vkCore.GetQueue();
       m_renderPass = m_vkCore.CreateSimpleRenderPass();
       m_frameBuffers = m_vkCore.CreateFramebuffers(m_renderPass);
+      max_tex = Scene::Object::getObjectsNumber();
       CreateShaders();
       CreateVertexBuffer();
       CreateUniformBuffers();
@@ -144,7 +148,7 @@ class VulkanApp {
 
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::Object::getObjectsNumber() * sizeof(UniformData));
-      MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/azul.png");
+      // MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/azul.png");
       MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("Textures/vermelho_verde.png");
 
       m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
