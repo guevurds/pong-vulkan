@@ -24,12 +24,28 @@ namespace MyVK {
       void Destroy(VkDevice Device);
   };
 
+  struct ImageAndMemory {
+    VkImage m_image = VK_NULL_HANDLE;
+    VkDeviceMemory m_mem = VK_NULL_HANDLE;
+    VkImageView m_view = VK_NULL_HANDLE;
+    VkSampler m_sampler = VK_NULL_HANDLE;
+  };
+
   class VulkanCore {
     public:
       VulkanCore();
       ~VulkanCore();
 
       void Init(const char* pAppName, GLFWwindow* pWindow);
+
+      ImageAndMemory LoadTexture(const char* filename);
+      void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+      void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+      VkImageView CreateTextureImageView(VkImage);
+      VkSampler CreateTextureSampler();
+
+      VkDescriptorImageInfo MakeDescriptorImageInfo(const ImageAndMemory& imageAndMemory);
 
       VkRenderPass CreateSimpleRenderPass();
 
@@ -50,6 +66,7 @@ namespace MyVK {
       // const std::vector<VkFramebuffer>& GetFramebuffers() const {return m_frameBuffers;}
 
       void CreateCommandBuffers(u32 Count, VkCommandBuffer* pCmdbufs);
+      void CreateCommandBuffers(u32 Count, VkCommandPool& cmdBufPool, VkCommandBuffer* pCmdbufs);
       
       void FreeCommandBuffers(u32 Count, const VkCommandBuffer* pCmdBufs);
 
@@ -65,7 +82,7 @@ namespace MyVK {
       void CreateSurface();
       void CreateDevice();
       void CreateSwapChain();
-      void CreateCommandBufferPool();
+      void CreateCommandBufferPool(u32 flags, VkCommandPool& cmdBufPool);
       BufferAndMemory CreateUniformBuffer(int Size);
 
       u32 GetMemoryTypeIndex(u32 memTypeBits, VkMemoryPropertyFlags memPropFlags);
@@ -89,6 +106,9 @@ namespace MyVK {
       VkCommandPool m_cmdBufPool;
       VulkanQueue m_queue;
       VkCommandBuffer m_copyCmdBuf;
+
+      VkCommandPool m_cmdBufPool_texture;
+      VkCommandBuffer m_copyCmdBuf_texture;
       // std::vector<VkFramebuffer> m_frameBuffers;
   };
 }

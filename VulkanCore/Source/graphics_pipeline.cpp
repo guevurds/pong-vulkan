@@ -7,10 +7,10 @@
 #include "my_vulkan_graphics_pipeline.h"
 
 namespace MyVK{
-  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos) {
     m_device = Device;
 
-    CreateDescriptorSets(NumImages, UniformBuffers, UniformDataSize); 
+    CreateDescriptorSets(NumImages, UniformBuffers, UniformDataSize, ImageInfos); 
 
     VkPipelineShaderStageCreateInfo ShaderStageCreateInfo[2] = {
       {
@@ -108,7 +108,13 @@ namespace MyVK{
     };
 
     VkPipelineColorBlendAttachmentState BlendAttachState = {
-      .blendEnable = VK_FALSE,
+      .blendEnable = VK_TRUE,  // antes estava VK_FALSE
+      .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+      .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      .colorBlendOp = VK_BLEND_OP_ADD,
+      .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+      .alphaBlendOp = VK_BLEND_OP_ADD,
       .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
     };
 
@@ -174,11 +180,11 @@ namespace MyVK{
     }
   }
 
-  void GraphicsPipeline::CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  void GraphicsPipeline::CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos) {
     CreateDescriptorPool(NumImages);
     CreateDescriptorSetLayout(UniformBuffers, UniformDataSize);
     AllocateDescriptorSets(NumImages);
-    UpdateDescriptorSets(NumImages, UniformBuffers, UniformDataSize);
+    UpdateDescriptorSets(NumImages, UniformBuffers, UniformDataSize, ImageInfos);
   }
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
@@ -226,10 +232,21 @@ namespace MyVK{
       .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
     };
 
+    VkDescriptorSetLayoutBinding FragmentShaderLayoutBinding_Texture = {
+      .binding = 1,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 3, //max_textures
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .pImmutableSamplers = nullptr
+    };
+
+
     if (UniformBuffers.size() > 0) {
       LayoutBindings.push_back(VertexShaderLayoutBinding_Uniform);
-    }
 
+      LayoutBindings.push_back(FragmentShaderLayoutBinding_Texture);
+    }
+    
     // LayoutBindings.push_back(VertexShaderLayoutBinding_VB);
 
     VkDescriptorSetLayoutCreateInfo LayoutInfo = {
@@ -261,9 +278,19 @@ namespace MyVK{
     CHECK_VK_RESULT(res, "vkAllocateDescriptorSets");
   }
 
-  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize
+    , std::vector<VkDescriptorImageInfo>& ImageInfos) {
 
     std::vector<VkWriteDescriptorSet> WriteDescriptorSet;
+
+    for (int i = 0; i < NumImages; ++i) {
+      assert(ImageInfos[0].imageView != VK_NULL_HANDLE);
+      assert(ImageInfos[0].sampler != VK_NULL_HANDLE);
+      assert(m_descriptorSets[i] != VK_NULL_HANDLE);
+    }
+
+    // printf("numImages %d\n", NumImages);
+    // printf("ImageInfos length %d\n", ImageInfos.size());
 
     for (size_t i = 0; i< NumImages; i++) {
 
@@ -283,6 +310,22 @@ namespace MyVK{
           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
           .pBufferInfo = &BufferInfo_Uniform
 
+        }
+      );
+
+      if (ImageInfos[0].imageView == VK_NULL_HANDLE || ImageInfos[0].sampler == VK_NULL_HANDLE) {
+        printf("deu ruim no UpdateDescriptorSets");
+      }
+
+      WriteDescriptorSet.push_back(
+        VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = m_descriptorSets[i],
+          .dstBinding = 1,
+          .dstArrayElement = 0,
+          .descriptorCount = 3,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .pImageInfo = &ImageInfos[0]
         }
       );
     }

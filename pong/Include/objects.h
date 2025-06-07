@@ -21,8 +21,11 @@
 //   glm::vec2 Tex;
 // };
 
-struct UniformData {
+struct alignas(256) UniformData {
   glm::mat4 WVP;
+  alignas(4) int textureIndex; // 4 bytes
+  alignas(4) int padding[3]; // 12 bytes para alinhar para 16
+  alignas(4) int paddingExtra[44]; // 176 bytes extras para fechar 256
 };
 
 extern bool key_pressed[2];

@@ -48,27 +48,27 @@ class Player : public Object {
     }
 };
 
-
+// stb carrega imagens com 0,0 = bottom left
 
 static Bot bot({ //Bot
-  Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-  Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-  Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top left
+  Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), // top right
+  Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
   
-  Vertex({-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-  Vertex({-0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-  Vertex({-1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+  Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
+  Vertex({-1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
 });
 
 
 
 
 static Player player({
-  Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 0.0f}), // top left
-  Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top right
-  Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), 
+  Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), 
+  Vertex({0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
   
-  Vertex({1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}),
-  Vertex({0.95f, -0.7f, 0.0f}, {1.0f, 1.0f}),
-  Vertex({1.0f, -0.7f, 0.0f}, {0.0f, 1.0f})
+  Vertex({1.0f, -1.0f, 0.0f},{1.0f, 1.0f}),
+  Vertex({0.95f, -0.7f, 0.0f},{0.0f, 0.0f}),
+  Vertex({1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
 });

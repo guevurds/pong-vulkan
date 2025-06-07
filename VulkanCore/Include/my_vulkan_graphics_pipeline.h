@@ -23,7 +23,7 @@ struct Vertex {
 namespace MyVK {
   class GraphicsPipeline {
     public:
-      GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffer, int UniformDataSize);
+      GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffer, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos);
 
       ~GraphicsPipeline();
 
@@ -32,10 +32,10 @@ namespace MyVK {
     private:
 
       void CreateDescriptorPool(int NumImages);
-      void CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
+      void CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos);
       void CreateDescriptorSetLayout(std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
       void AllocateDescriptorSets(int NumImages);
-      void UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize);
+      void UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos);
 
       VkDevice m_device = NULL;
       VkPipeline m_pipeline = NULL;

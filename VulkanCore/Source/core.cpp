@@ -1,11 +1,15 @@
 #include <vector>
 #include <assert.h>
+#include <iostream>
 
 #include "my_types.h"
 #include "my_util.h"
 #include "my_vulkan_core.h"
 #include "my_vulkan_util.h"
 #include "my_vulkan_wrapper.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace MyVK {
 
@@ -19,7 +23,7 @@ namespace MyVK {
       printf("Debug callback: %s\n", pCallbackData->pMessage);
       printf("Severity %s\n", GetDebugServerityStr(Severity));
       printf("Type %s\n", GetDebugType(Type));
-      printf("Objects");
+      printf("Objects ");
 
       for (u32 i =0; i< pCallbackData->objectCount; i++) {
         #ifdef _WIN32
@@ -102,9 +106,13 @@ namespace MyVK {
     m_queueFamily = m_physDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
     CreateDevice();
     CreateSwapChain();
-    CreateCommandBufferPool();
+    CreateCommandBufferPool(0, m_cmdBufPool);
+
+    CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_cmdBufPool_texture);
     m_queue.Init(m_instance ,m_device, m_swapChain, m_queueFamily, 0);
     CreateCommandBuffers(1, &m_copyCmdBuf);
+    CreateCommandBuffers(1, m_cmdBufPool_texture, &m_copyCmdBuf_texture);
+
   }
 
   const VkImage& VulkanCore::GetImage(int Index) const {
@@ -233,7 +241,8 @@ namespace MyVK {
 
     std::vector<const char*> DevExts = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
+      VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+      // VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME // extensão para usar o tipo VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, mais generico que os usados anteriormenete como VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL //  não funcionou
     };
 
     if (m_physDevices.Selected().m_features.geometryShader == VK_FALSE) {
@@ -247,6 +256,7 @@ namespace MyVK {
     VkPhysicalDeviceFeatures DeviceFeatures = {0};
     DeviceFeatures.geometryShader = VK_TRUE;
     DeviceFeatures.tessellationShader = VK_TRUE;
+    DeviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo DeviceCreateInfo = {
       .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -385,15 +395,15 @@ namespace MyVK {
     }
   }
 
-  void VulkanCore::CreateCommandBufferPool() {
+  void VulkanCore::CreateCommandBufferPool(u32 flags, VkCommandPool& cmdBufPool) {
     VkCommandPoolCreateInfo cmdPoolCreateInfo = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
       .pNext = NULL,
-      .flags = 0,
+      .flags = flags,
       .queueFamilyIndex = m_queueFamily
     };
 
-    VkResult res = vkCreateCommandPool(m_device, &cmdPoolCreateInfo, NULL, &m_cmdBufPool);
+    VkResult res = vkCreateCommandPool(m_device, &cmdPoolCreateInfo, NULL, &cmdBufPool);
     CHECK_VK_RESULT(res, "vkCreateCommandPool\n");
 
     printf("Command buffer pool created\n");
@@ -404,6 +414,21 @@ namespace MyVK {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
       .pNext = NULL,
       .commandPool = m_cmdBufPool,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount = count
+    };
+
+    VkResult res = vkAllocateCommandBuffers(m_device, &cmdBufAllocInfo, cmdBufs);
+    CHECK_VK_RESULT(res, "vkAllocateCommandBuffers\n");
+
+    printf("%d command buffers created\n", count);
+  }
+
+   void VulkanCore::CreateCommandBuffers(u32 count, VkCommandPool& cmdBufPool, VkCommandBuffer* cmdBufs) {
+    VkCommandBufferAllocateInfo cmdBufAllocInfo = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .pNext = NULL,
+      .commandPool = cmdBufPool, 
       .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
       .commandBufferCount = count
     };
@@ -434,7 +459,7 @@ namespace MyVK {
 
     VkAttachmentReference AttachRef = {
       .attachment = 0,
-      .layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
 
     VkSubpassDescription SubpassDesc = {
@@ -526,7 +551,7 @@ namespace MyVK {
     vkUnmapMemory(m_device, StagingVB.m_mem);
 
     //Step 5: create the final buffer
-    Usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    Usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     MemProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     BufferAndMemory VB = CreateBuffer(Size, Usage, MemProps);
 
@@ -591,7 +616,7 @@ namespace MyVK {
   }
 
   void VulkanCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size) {
-    BeginCommandBuffer(m_copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    BeginCommandBuffer(m_copyCmdBuf_texture, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkBufferCopy BufferCopy = {
       .srcOffset = 0,
@@ -599,11 +624,11 @@ namespace MyVK {
       .size = Size
     };
 
-    vkCmdCopyBuffer(m_copyCmdBuf, Src, Dst, 1, &BufferCopy);
+    vkCmdCopyBuffer(m_copyCmdBuf_texture, Src, Dst, 1, &BufferCopy);
 
-    vkEndCommandBuffer(m_copyCmdBuf);
+    vkEndCommandBuffer(m_copyCmdBuf_texture);
   
-    m_queue.SubmitSync(m_copyCmdBuf);
+    m_queue.SubmitSync(m_copyCmdBuf_texture);
 
     m_queue.WaitIdle();
   }
@@ -660,4 +685,183 @@ namespace MyVK {
     memcpy(pMem, pData, Size);
     vkUnmapMemory(Device, m_mem);
   }
+
+
+  ImageAndMemory VulkanCore::LoadTexture(const char* filename) {
+    ImageAndMemory textureImage;
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    if(!pixels) {
+      throw std::runtime_error("Failed to load texture image!");
+    }
+
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    // Staging buffer --- buffer temporario
+    BufferAndMemory stagingBuffer = CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    stagingBuffer.Update(m_device, pixels, (size_t)imageSize, 0);
+    stbi_image_free(pixels);
+
+    //Criar imagem
+    VkImageCreateInfo imageInfo = {
+      .sType= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .imageType = VK_IMAGE_TYPE_2D,
+      .format = VK_FORMAT_R8G8B8A8_SRGB,
+      .extent = { (uint32_t)texWidth, (uint32_t)texHeight, 1},
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .tiling = VK_IMAGE_TILING_OPTIMAL,
+      .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    
+    VkResult res = vkCreateImage(m_device, &imageInfo, nullptr, &textureImage.m_image);
+    CHECK_VK_RESULT(res, "vkCreateImage");
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_device, textureImage.m_image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .allocationSize = memRequirements.size,
+      .memoryTypeIndex = GetMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    res = vkAllocateMemory(m_device, &allocInfo, nullptr, &textureImage.m_mem);
+    CHECK_VK_RESULT(res, "vkAllocateMemory (texture)");
+
+    res = vkBindImageMemory(m_device, textureImage.m_image, textureImage.m_mem, 0);
+    CHECK_VK_RESULT(res, "vkBindImageMemory (texture)");
+
+    //Transição e cópia
+    TransitionImageLayout(textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    CopyBufferToImage(stagingBuffer.m_buffer, textureImage.m_image, (uint32_t)texWidth, (uint32_t)texHeight);
+
+    TransitionImageLayout(textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    stagingBuffer.Destroy(m_device);
+
+    textureImage.m_view = CreateImageView(m_device, textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+    textureImage.m_sampler = CreateTextureSampler();
+
+    // vkEndCommandBuffer(m_copyCmdBuf_texture);
+    // m_queue.SubmitSync(m_copyCmdBuf_texture);
+    m_queue.WaitIdle();
+
+    return textureImage;
+  }
+
+  void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    VkCommandBuffer cmd = m_copyCmdBuf_texture;
+    // vkResetCommandBuffer(cmd, 0);
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+
+    VkImageMemoryBarrier barrier = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .oldLayout = oldLayout,
+      .newLayout = newLayout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = image,
+      .subresourceRange = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel = 0,
+        .levelCount = 1,
+        .baseArrayLayer = 0,
+        .layerCount = 1
+      }
+    };
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = 0;
+
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vkEndCommandBuffer(cmd);
+    m_queue.SubmitSync(cmd);
+    m_queue.WaitIdle();
+  }
+
+  void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer cmd = m_copyCmdBuf_texture;
+    vkResetCommandBuffer(cmd, 0);
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+
+    VkBufferImageCopy region = {
+      .bufferOffset = 0,
+      .bufferRowLength = 0,
+      .bufferImageHeight = 0,
+      .imageSubresource = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .mipLevel = 0,
+        .baseArrayLayer = 0,
+        .layerCount = 1
+      }, 
+      .imageOffset = {0, 0, 0},
+      .imageExtent = {width, height, 1}
+    };
+
+    vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkEndCommandBuffer(cmd);
+    m_queue.SubmitSync(cmd);
+    m_queue.WaitIdle();
+  }
+
+  VkImageView VulkanCore::CreateTextureImageView(VkImage image) {
+    return CreateImageView(
+      m_device,
+      image,
+      VK_FORMAT_R8G8B8A8_SRGB,
+      VK_IMAGE_ASPECT_COLOR_BIT,
+      VK_IMAGE_VIEW_TYPE_2D,
+      1, // layer count
+      1 // mip levels
+    );
+  }
+
+  VkSampler VulkanCore::CreateTextureSampler() {
+    VkSamplerCreateInfo samplerInfo = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .magFilter = VK_FILTER_LINEAR,
+      .minFilter = VK_FILTER_LINEAR,
+
+      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+
+      .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .anisotropyEnable = VK_TRUE,
+      .maxAnisotropy = 16,
+      
+      .compareEnable = VK_FALSE,
+      .compareOp = VK_COMPARE_OP_ALWAYS,
+      
+      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      .unnormalizedCoordinates = VK_FALSE
+    };
+
+    VkSampler sampler;
+    VkResult res = vkCreateSampler(m_device, &samplerInfo, nullptr, &sampler);
+    CHECK_VK_RESULT(res, "vkCreate?Sampler");
+
+    return sampler;
+  }
+
+  VkDescriptorImageInfo VulkanCore::MakeDescriptorImageInfo(const ImageAndMemory& imageAndMemory) {
+    // if (imageAndMemory.m_view == VK_NULL_HANDLE || imageAndMemory.m_sampler == VK_NULL_HANDLE) {
+    //   printf("deu ruim no MakeDescriptorImageInfo");
+    // }
+
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = imageAndMemory.m_view;
+    imageInfo.sampler = imageAndMemory.m_sampler;
+    return imageInfo;
+  }
+
 }
