@@ -616,7 +616,7 @@ namespace MyVK {
   }
 
   void VulkanCore::CopyBuffer(VkBuffer Dst, VkBuffer Src, VkDeviceSize Size) {
-    BeginCommandBuffer(m_copyCmdBuf, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    BeginCommandBuffer(m_copyCmdBuf_texture, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkBufferCopy BufferCopy = {
       .srcOffset = 0,
@@ -624,11 +624,11 @@ namespace MyVK {
       .size = Size
     };
 
-    vkCmdCopyBuffer(m_copyCmdBuf, Src, Dst, 1, &BufferCopy);
+    vkCmdCopyBuffer(m_copyCmdBuf_texture, Src, Dst, 1, &BufferCopy);
 
-    vkEndCommandBuffer(m_copyCmdBuf);
+    vkEndCommandBuffer(m_copyCmdBuf_texture);
   
-    m_queue.SubmitSync(m_copyCmdBuf);
+    m_queue.SubmitSync(m_copyCmdBuf_texture);
 
     m_queue.WaitIdle();
   }
@@ -759,7 +759,6 @@ namespace MyVK {
   void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
     // vkResetCommandBuffer(cmd, 0);
-    printf("VkCommandPool in CopyBufferToImage is %p\n in the CopyBuffer is %p\n", (void *)&m_cmdBufPool_texture, (void *)&m_cmdBufPool);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkImageMemoryBarrier barrier = {
@@ -790,7 +789,6 @@ namespace MyVK {
 
   void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
-    printf("VkCommandPool in CopyBufferToImage is %p\n in the CopyBuffer is %p\n", (void *)&m_cmdBufPool_texture, (void *)&m_cmdBufPool);
     vkResetCommandBuffer(cmd, 0);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
