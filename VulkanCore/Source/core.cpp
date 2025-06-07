@@ -667,6 +667,7 @@ namespace MyVK {
 
 
   ImageAndMemory VulkanCore::LoadTexture(const char* filename) {
+    ImageAndMemory textureImage;
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if(!pixels) {
@@ -696,7 +697,7 @@ namespace MyVK {
       .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
     };
 
-    ImageAndMemory textureImage;
+    
     VkResult res = vkCreateImage(m_device, &imageInfo, nullptr, &textureImage.m_image);
     CHECK_VK_RESULT(res, "vkCreateImage");
 
@@ -723,6 +724,9 @@ namespace MyVK {
     TransitionImageLayout(textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     stagingBuffer.Destroy(m_device);
+
+    textureImage.m_view = CreateImageView(m_device, textureImage.m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+    textureImage.m_sampler = CreateTextureSampler();
 
     return textureImage;
   }
@@ -779,5 +783,52 @@ namespace MyVK {
     m_queue.SubmitSync(cmd);
   }
 
+  VkImageView VulkanCore::CreateTextureImageView(VkImage image) {
+    return CreateImageView(
+      m_device,
+      image,
+      VK_FORMAT_R8G8B8A8_SRGB,
+      VK_IMAGE_ASPECT_COLOR_BIT,
+      VK_IMAGE_VIEW_TYPE_2D,
+      1, // layer count
+      1 // mip levels
+    );
+  }
+
+  VkSampler VulkanCore::CreateTextureSampler() {
+    VkSamplerCreateInfo samplerInfo = {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .magFilter = VK_FILTER_LINEAR,
+      .minFilter = VK_FILTER_LINEAR,
+
+      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+
+      .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .anisotropyEnable = VK_TRUE,
+      .maxAnisotropy = 16,
+      
+      .compareEnable = VK_FALSE,
+      .compareOp = VK_COMPARE_OP_ALWAYS,
+      
+      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      .unnormalizedCoordinates = VK_FALSE
+    };
+
+    VkSampler sampler;
+    VkResult res = vkCreateSampler(m_device, &samplerInfo, nullptr, &sampler);
+    CHECK_VK_RESULT(res, "vkCreate?Sampler");
+
+    return sampler;
+  }
+
+  VkDescriptorImageInfo VulkanCore::MakeDescriptorImageInfo(const ImageAndMemory& imageAndMemory) {
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = imageAndMemory.m_view;
+    imageInfo.sampler = imageAndMemory.m_sampler;
+    return imageInfo;
+  }
 
 }

@@ -27,6 +27,8 @@ namespace MyVK {
   struct ImageAndMemory {
     VkImage m_image = VK_NULL_HANDLE;
     VkDeviceMemory m_mem = VK_NULL_HANDLE;
+    VkImageView m_view = VK_NULL_HANDLE;
+    VkSampler m_sampler = VK_NULL_HANDLE;
   };
 
   class VulkanCore {
@@ -39,6 +41,11 @@ namespace MyVK {
       ImageAndMemory LoadTexture(const char* filename);
       void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
       void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+      VkImageView CreateTextureImageView(VkImage);
+      VkSampler CreateTextureSampler();
+
+      VkDescriptorImageInfo MakeDescriptorImageInfo(const ImageAndMemory& imageAndMemory);
 
       VkRenderPass CreateSimpleRenderPass();
 

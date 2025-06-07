@@ -7,10 +7,10 @@
 #include "my_vulkan_graphics_pipeline.h"
 
 namespace MyVK{
-  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  GraphicsPipeline::GraphicsPipeline(VkDevice Device, GLFWwindow* pWindow, VkRenderPass RenderPass, VkShaderModule vs, VkShaderModule fs, int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos) {
     m_device = Device;
 
-    CreateDescriptorSets(NumImages, UniformBuffers, UniformDataSize); 
+    CreateDescriptorSets(NumImages, UniformBuffers, UniformDataSize, ImageInfos); 
 
     VkPipelineShaderStageCreateInfo ShaderStageCreateInfo[2] = {
       {
@@ -180,11 +180,11 @@ namespace MyVK{
     }
   }
 
-  void GraphicsPipeline::CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  void GraphicsPipeline::CreateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize, std::vector<VkDescriptorImageInfo>& ImageInfos) {
     CreateDescriptorPool(NumImages);
     CreateDescriptorSetLayout(UniformBuffers, UniformDataSize);
     AllocateDescriptorSets(NumImages);
-    UpdateDescriptorSets(NumImages, UniformBuffers, UniformDataSize);
+    UpdateDescriptorSets(NumImages, UniformBuffers, UniformDataSize, ImageInfos);
   }
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
@@ -232,10 +232,21 @@ namespace MyVK{
       .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
     };
 
+    VkDescriptorSetLayoutBinding FragmentShaderLayoutBinding_Texture = {
+      .binding = 1,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 3, //max_textures
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .pImmutableSamplers = nullptr
+    };
+
+
     if (UniformBuffers.size() > 0) {
       LayoutBindings.push_back(VertexShaderLayoutBinding_Uniform);
-    }
 
+      LayoutBindings.push_back(FragmentShaderLayoutBinding_Texture);
+    }
+    
     // LayoutBindings.push_back(VertexShaderLayoutBinding_VB);
 
     VkDescriptorSetLayoutCreateInfo LayoutInfo = {
@@ -267,7 +278,8 @@ namespace MyVK{
     CHECK_VK_RESULT(res, "vkAllocateDescriptorSets");
   }
 
-  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize) {
+  void GraphicsPipeline::UpdateDescriptorSets(int NumImages, std::vector<BufferAndMemory>& UniformBuffers, int UniformDataSize
+    , std::vector<VkDescriptorImageInfo>& ImageInfos) {
 
     std::vector<VkWriteDescriptorSet> WriteDescriptorSet;
 
@@ -289,6 +301,18 @@ namespace MyVK{
           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
           .pBufferInfo = &BufferInfo_Uniform
 
+        }
+      );
+
+      WriteDescriptorSet.push_back(
+        VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = m_descriptorSets[i],
+          .dstBinding = 1,
+          .dstArrayElement = 0,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .pImageInfo = ImageInfos.data()
         }
       );
     }
