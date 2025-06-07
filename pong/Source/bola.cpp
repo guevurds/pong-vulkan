@@ -45,7 +45,7 @@ std::vector<Vertex> createCircle() {
   const int segments = 20;
   const float radius = 0.05f;
   const glm::vec3 center = {0.0f, 0.0f, 0.0f};
-  const glm::vec2 centerUV = {0.5f, 0.5f};
+  const glm::vec2 centerUV = {0.9f, 0.9f};
 
   for (int i =0; i<segments; ++i) {
     float angle0 = (float)i / segments * 2.0f * M_PI;
