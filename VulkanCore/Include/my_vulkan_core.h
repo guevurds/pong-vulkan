@@ -66,6 +66,7 @@ namespace MyVK {
       // const std::vector<VkFramebuffer>& GetFramebuffers() const {return m_frameBuffers;}
 
       void CreateCommandBuffers(u32 Count, VkCommandBuffer* pCmdbufs);
+      void CreateCommandBuffers(u32 Count, VkCommandPool& cmdBufPool, VkCommandBuffer* pCmdbufs);
       
       void FreeCommandBuffers(u32 Count, const VkCommandBuffer* pCmdBufs);
 
@@ -81,7 +82,7 @@ namespace MyVK {
       void CreateSurface();
       void CreateDevice();
       void CreateSwapChain();
-      void CreateCommandBufferPool();
+      void CreateCommandBufferPool(u32 flags, VkCommandPool& cmdBufPool);
       BufferAndMemory CreateUniformBuffer(int Size);
 
       u32 GetMemoryTypeIndex(u32 memTypeBits, VkMemoryPropertyFlags memPropFlags);
@@ -105,6 +106,9 @@ namespace MyVK {
       VkCommandPool m_cmdBufPool;
       VulkanQueue m_queue;
       VkCommandBuffer m_copyCmdBuf;
+
+      VkCommandPool m_cmdBufPool_texture;
+      VkCommandBuffer m_copyCmdBuf_texture;
       // std::vector<VkFramebuffer> m_frameBuffers;
   };
 }

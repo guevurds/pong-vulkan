@@ -106,9 +106,13 @@ namespace MyVK {
     m_queueFamily = m_physDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
     CreateDevice();
     CreateSwapChain();
-    CreateCommandBufferPool();
+    CreateCommandBufferPool(0, m_cmdBufPool);
+
+    CreateCommandBufferPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, m_cmdBufPool_texture);
     m_queue.Init(m_instance ,m_device, m_swapChain, m_queueFamily, 0);
     CreateCommandBuffers(1, &m_copyCmdBuf);
+    CreateCommandBuffers(1, m_cmdBufPool_texture, &m_copyCmdBuf_texture);
+
   }
 
   const VkImage& VulkanCore::GetImage(int Index) const {
@@ -237,7 +241,8 @@ namespace MyVK {
 
     std::vector<const char*> DevExts = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME
+      VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+      // VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME // extensão para usar o tipo VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, mais generico que os usados anteriormenete como VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL //  não funcionou
     };
 
     if (m_physDevices.Selected().m_features.geometryShader == VK_FALSE) {
@@ -389,15 +394,15 @@ namespace MyVK {
     }
   }
 
-  void VulkanCore::CreateCommandBufferPool() {
+  void VulkanCore::CreateCommandBufferPool(u32 flags, VkCommandPool& cmdBufPool) {
     VkCommandPoolCreateInfo cmdPoolCreateInfo = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
       .pNext = NULL,
-      .flags = 0,
+      .flags = flags,
       .queueFamilyIndex = m_queueFamily
     };
 
-    VkResult res = vkCreateCommandPool(m_device, &cmdPoolCreateInfo, NULL, &m_cmdBufPool);
+    VkResult res = vkCreateCommandPool(m_device, &cmdPoolCreateInfo, NULL, &cmdBufPool);
     CHECK_VK_RESULT(res, "vkCreateCommandPool\n");
 
     printf("Command buffer pool created\n");
@@ -408,6 +413,21 @@ namespace MyVK {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
       .pNext = NULL,
       .commandPool = m_cmdBufPool,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount = count
+    };
+
+    VkResult res = vkAllocateCommandBuffers(m_device, &cmdBufAllocInfo, cmdBufs);
+    CHECK_VK_RESULT(res, "vkAllocateCommandBuffers\n");
+
+    printf("%d command buffers created\n", count);
+  }
+
+   void VulkanCore::CreateCommandBuffers(u32 count, VkCommandPool& cmdBufPool, VkCommandBuffer* cmdBufs) {
+    VkCommandBufferAllocateInfo cmdBufAllocInfo = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .pNext = NULL,
+      .commandPool = cmdBufPool, 
       .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
       .commandBufferCount = count
     };
@@ -438,7 +458,7 @@ namespace MyVK {
 
     VkAttachmentReference AttachRef = {
       .attachment = 0,
-      .layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+      .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
 
     VkSubpassDescription SubpassDesc = {
@@ -732,8 +752,8 @@ namespace MyVK {
   }
 
   void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    VkCommandBuffer cmd = m_copyCmdBuf;
-    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    VkCommandBuffer cmd = m_copyCmdBuf_texture;
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkImageMemoryBarrier barrier = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -761,8 +781,9 @@ namespace MyVK {
   }
 
   void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    VkCommandBuffer cmd = m_copyCmdBuf;
-    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    VkCommandBuffer cmd = m_copyCmdBuf_texture;
+    printf("VkCommandPool in CopyBuffer is %p", (void *)&m_cmdBufPool_texture);
+    BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkBufferImageCopy region = {
       .bufferOffset = 0,
