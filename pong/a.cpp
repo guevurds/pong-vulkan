@@ -144,6 +144,12 @@ class VulkanApp {
 
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::Object::getObjectsNumber() * sizeof(UniformData));
+      MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/azul.png");
+      MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("Textures/vermelho_verde.png");
+
+      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
+      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
+      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
     }
 
     void CreateShaders() {
@@ -152,7 +158,7 @@ class VulkanApp {
     }
 
     void CreatePipeline() {
-      m_pPipeline = new MyVK::GraphicsPipeline(m_device, m_pWindow, m_renderPass, m_vs, m_fs, m_numImages, m_uniformBuffers, sizeof(UniformData));
+      m_pPipeline = new MyVK::GraphicsPipeline(m_device, m_pWindow, m_renderPass, m_vs, m_fs, m_numImages, m_uniformBuffers, sizeof(UniformData), m_textureInfos);
     }
 
     void RecordCommandBuffers() {
@@ -268,6 +274,8 @@ class VulkanApp {
     MyVK::GraphicsPipeline* m_pPipeline = NULL;
     std::vector<MyVK::SimpleMesh> m_meshs;
     std::vector<MyVK::BufferAndMemory> m_uniformBuffers;
+    std::vector<VkDescriptorImageInfo> m_textureInfos;
+    
 };
 
 #define APP_NAME "Pong Vulkan"
