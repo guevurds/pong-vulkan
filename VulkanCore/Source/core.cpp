@@ -23,7 +23,7 @@ namespace MyVK {
       printf("Debug callback: %s\n", pCallbackData->pMessage);
       printf("Severity %s\n", GetDebugServerityStr(Severity));
       printf("Type %s\n", GetDebugType(Type));
-      printf("Objects");
+      printf("Objects ");
 
       for (u32 i =0; i< pCallbackData->objectCount; i++) {
         #ifdef _WIN32
@@ -758,7 +758,8 @@ namespace MyVK {
 
   void VulkanCore::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
-    vkResetCommandBuffer(cmd, 0);
+    // vkResetCommandBuffer(cmd, 0);
+    printf("VkCommandPool in CopyBufferToImage is %p\n in the CopyBuffer is %p\n", (void *)&m_cmdBufPool_texture, (void *)&m_cmdBufPool);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
     VkImageMemoryBarrier barrier = {
@@ -789,7 +790,7 @@ namespace MyVK {
 
   void VulkanCore::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer cmd = m_copyCmdBuf_texture;
-    // printf("VkCommandPool in CopyBuffer is %p", (void *)&m_cmdBufPool_texture);
+    printf("VkCommandPool in CopyBufferToImage is %p\n in the CopyBuffer is %p\n", (void *)&m_cmdBufPool_texture, (void *)&m_cmdBufPool);
     vkResetCommandBuffer(cmd, 0);
     BeginCommandBuffer(cmd, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 
@@ -810,6 +811,7 @@ namespace MyVK {
     vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     vkEndCommandBuffer(cmd);
     m_queue.SubmitSync(cmd);
+    m_queue.WaitIdle();
   }
 
   VkImageView VulkanCore::CreateTextureImageView(VkImage image) {
