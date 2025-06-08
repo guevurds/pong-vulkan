@@ -7,7 +7,7 @@
 class Bola : public Scene::Object {
  using Object::Object;
 
- void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const override {
+ void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) override {
 
    static float foo = 0.0f;
       static float movement = 0.000f;

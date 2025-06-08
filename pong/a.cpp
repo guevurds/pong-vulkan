@@ -171,7 +171,7 @@ class VulkanApp {
     }
 
     void RecordCommandBuffers() {
-      VkClearColorValue ClearColor = {0.83f, 0.72f, 0.59f, 0.0f};
+      VkClearColorValue ClearColor = {0.0f, 0.0f, 0.0f, 0.0f};
       VkClearValue ClearValue;
       ClearValue.color = ClearColor;
 

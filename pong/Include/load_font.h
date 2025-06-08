@@ -8,5 +8,5 @@
 namespace MyVK {
     std::vector<unsigned char> LoadFontAtlas(const char* font_path);
 
-    std::vector<Vertex> TextToQuad(const char* text);
+    std::vector<Vertex> TextToQuad(const char* text, float posx, float posy);
 }

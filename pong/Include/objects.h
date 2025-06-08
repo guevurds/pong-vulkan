@@ -7,6 +7,7 @@
 
 #include "my_vulkan_simple_mash.h"
 #include "my_vulkan_graphics_pipeline.h"
+#include "my_vulkan_core.h"
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -36,11 +37,9 @@ namespace Scene {
       Object(std::vector<Vertex> vertices);
       virtual ~Object();
       
-      
       static int getObjectsNumber();
      
-     
-      virtual void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const;
+      virtual void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos);
       static void updateAll(MyVK::BufferAndMemory& uniformBuffer);
       
       void createVertexBuffer(VkDevice& device, MyVK::VulkanCore& vkCore);
@@ -48,6 +47,8 @@ namespace Scene {
 
       void recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) const;
       static void recordCommandBufferAll(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index);
+
+      void updateVertexBufferMapped(std::vector<Vertex> newVerts);
 
     protected:
       VkDevice m_device;
@@ -59,6 +60,10 @@ namespace Scene {
       MyVK::SimpleMesh m_mesh;
       uint32_t m_offset;
       uint32_t m_vertexCount;
+      MyVK::VulkanCore m_vkCore;
+      MyVK::GraphicsPipeline* m_pPipeline;
+      std::vector<VkCommandBuffer> m_cmdBufs;
+      uint32_t m_index;
   };
 }
 

@@ -7,7 +7,7 @@ class Bot : public Object {
   public: 
     using Object::Object;
 
-    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const override {
+    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) override {
       static float foo = 0.0f;
       glm::mat4 Translate = glm::mat4(1.0);
       static float movement = 0.006f;
@@ -31,7 +31,7 @@ class Player : public Object {
   public: 
     using Object::Object;
 
-    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const override {
+    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) override {
       static float position = 0.0f;
 
       UniformData ubo {};
@@ -60,35 +60,48 @@ class Player : public Object {
 
 // stb carrega imagens com 0,0 = bottom left
 
-// static Bot bot({ //Bot
-//   Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top left
-//   Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), // top right
-//   Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
+static Bot bot({ //Bot
+  Vertex({-0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), // top left
+  Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), // top right
+  Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
   
-//   Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}),
-//   Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
-//   Vertex({-1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
-// });
+  Vertex({-1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}),
+  Vertex({-0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
+  Vertex({-1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
+});
 
 
-// static Player player({
-//   Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), 
-//   Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), 
-//   Vertex({0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
+static Player player({
+  Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), 
+  Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), 
+  Vertex({0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
   
-//   Vertex({1.0f, -1.0f, 0.0f},{1.0f, 1.0f}),
-//   Vertex({0.95f, -0.7f, 0.0f},{0.0f, 0.0f}),
-//   Vertex({1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
-// });
+  Vertex({1.0f, -1.0f, 0.0f},{1.0f, 1.0f}),
+  Vertex({0.95f, -0.7f, 0.0f},{0.0f, 0.0f}),
+  Vertex({1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
+});
 
 
 class Texto : public Object {
   public: 
     using Object::Object;
 
-    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const override {
-      glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f));
-      // glm::mat4 model = flipY * glm::translate(glm::mat4(1.0f), glm::vec3(x, y, 0.0f));
+    void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) override {
+      static int contador = 0;
+      contador++;
+
+      static int showNumber = 0;
+      if(contador>= 60) {
+        contador=0;
+        showNumber++;
+        if(showNumber >= 10) {
+          updateVertexBufferMapped(MyVK::TextToQuad(std::to_string(showNumber).c_str(), WINDOW_WIDTH/2, 36.0f));
+        } else {
+          updateVertexBufferMapped(MyVK::TextToQuad(("0" + std::to_string(showNumber)).c_str(), WINDOW_WIDTH/2, 36.0f));
+        }
+        
+      }
+      glm::mat4 flipY = glm::mat4(1.0f);
 
       UniformData ubo {};
       ubo.WVP = flipY;
@@ -98,14 +111,4 @@ class Texto : public Object {
     }
 };
 
-static Object text(MyVK::TextToQuad("Hello World")); 
-
-static Object test({ 
-  Vertex({0.95f, -1.0f, 0.0f}, {0.0f, 1.0f}), 
-  Vertex({1.0f, -1.0f, 0.0f}, {1.0f, 1.0f}), 
-  Vertex({0.95f, -0.7f, 0.0f}, {0.0f, 0.0f}),
-  
-  Vertex({1.0f, -1.0f, 0.0f},{1.0f, 1.0f}),
-  Vertex({0.95f, -0.7f, 0.0f},{0.0f, 0.0f}),
-  Vertex({1.0f, -0.7f, 0.0f}, {1.0f, 0.0f})
-});
+static Texto text(MyVK::TextToQuad("00", WINDOW_WIDTH/2, 36.0f)); 
