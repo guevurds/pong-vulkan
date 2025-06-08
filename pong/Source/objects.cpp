@@ -25,7 +25,11 @@ int Object::getObjectsNumber() {
 
 void Object::update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) const {
   glm::mat4 Transform = glm::mat4(1.0);
-  uniformBuffer.Update(m_device, &Transform, sizeof(Transform), memPos);
+  UniformData ubo {
+    .WVP = Transform,
+    .textureIndex = 0
+  };
+  uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos);
 }
 
 void Object::updateAll(MyVK::BufferAndMemory& uniformBuffer) {

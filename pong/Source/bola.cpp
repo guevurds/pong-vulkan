@@ -35,7 +35,11 @@ class Bola : public Scene::Object {
     // Multiplica tudo: World * View * Projection
     glm::mat4 WVP = proj * view * model;
 
-  uniformBuffer.Update(m_device, &WVP, sizeof(WVP), memPos);
+    UniformData ubo {};
+    ubo.WVP = WVP;
+    ubo.textureIndex = 0;
+
+    uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos); 
  }
 
 };
@@ -63,4 +67,4 @@ std::vector<Vertex> createCircle() {
 }
 
 
-static Bola bola(createCircle());
+// static Bola bola(createCircle());

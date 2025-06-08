@@ -686,14 +686,74 @@ namespace MyVK {
     vkUnmapMemory(Device, m_mem);
   }
 
+  ImageAndMemory VulkanCore::LoadTextureFromMemory(const void* pData, int texWidth, int texHeight, VkFormat format) {
+    ImageAndMemory textureImage;
+
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    // Staging buffer --- buffer temporario
+    BufferAndMemory stagingBuffer = CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    stagingBuffer.Update(m_device, pData, (size_t)imageSize, 0);
+
+    //Criar imagem
+    VkImageCreateInfo imageInfo = {
+      .sType= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .imageType = VK_IMAGE_TYPE_2D,
+      .format = format,
+      .extent = { (uint32_t)texWidth, (uint32_t)texHeight, 1},
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .tiling = VK_IMAGE_TILING_OPTIMAL,
+      .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    
+    VkResult res = vkCreateImage(m_device, &imageInfo, nullptr, &textureImage.m_image);
+    CHECK_VK_RESULT(res, "vkCreateImage");
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_device, textureImage.m_image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+      .allocationSize = memRequirements.size,
+      .memoryTypeIndex = GetMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    res = vkAllocateMemory(m_device, &allocInfo, nullptr, &textureImage.m_mem);
+    CHECK_VK_RESULT(res, "vkAllocateMemory (texture)");
+
+    res = vkBindImageMemory(m_device, textureImage.m_image, textureImage.m_mem, 0);
+    CHECK_VK_RESULT(res, "vkBindImageMemory (texture)");
+
+    //Transição e cópia
+    TransitionImageLayout(textureImage.m_image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    CopyBufferToImage(stagingBuffer.m_buffer, textureImage.m_image, (uint32_t)texWidth, (uint32_t)texHeight);
+
+    TransitionImageLayout(textureImage.m_image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    stagingBuffer.Destroy(m_device);
+
+    textureImage.m_view = CreateImageView(m_device, textureImage.m_image, format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
+    textureImage.m_sampler = CreateTextureSampler();
+
+    return textureImage;
+  }
 
   ImageAndMemory VulkanCore::LoadTexture(const char* filename) {
-    ImageAndMemory textureImage;
+    
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if(!pixels) {
       throw std::runtime_error("Failed to load texture image!");
     }
+
+    ImageAndMemory textureImage;
 
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -701,6 +761,7 @@ namespace MyVK {
     BufferAndMemory stagingBuffer = CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     stagingBuffer.Update(m_device, pixels, (size_t)imageSize, 0);
+
     stbi_image_free(pixels);
 
     //Criar imagem

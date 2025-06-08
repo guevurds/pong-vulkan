@@ -39,6 +39,7 @@ namespace MyVK {
       void Init(const char* pAppName, GLFWwindow* pWindow);
 
       ImageAndMemory LoadTexture(const char* filename);
+      ImageAndMemory LoadTextureFromMemory(const void* pData, int texWidth, int texHeight, VkFormat format);
       void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
       void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 

@@ -17,6 +17,7 @@
 #include "my_vulkan_graphics_pipeline.h"
 #include "my_vulkan_simple_mash.h"
 #include "objects_quantity.h"
+#include "load_font.h"
 
 #include "objects.h"
 
@@ -148,10 +149,14 @@ class VulkanApp {
 
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::Object::getObjectsNumber() * sizeof(UniformData));
-      // MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/azul.png");
+      MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/azul.png");
       MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("Textures/vermelho_verde.png");
+      std::vector<unsigned char> rgba = MyVK::LoadFontAtlas("Textures/roboto_font.ttf");
+      MyVK::ImageAndMemory font = m_vkCore.LoadTextureFromMemory(rgba.data(), 512, 512, VK_FORMAT_R8G8B8A8_UNORM);
 
-      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
+      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(font));
+
+      m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex1));
       m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
       m_textureInfos.push_back(m_vkCore.MakeDescriptorImageInfo(tex2));
     }
@@ -166,7 +171,7 @@ class VulkanApp {
     }
 
     void RecordCommandBuffers() {
-      VkClearColorValue ClearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+      VkClearColorValue ClearColor = {0.83f, 0.72f, 0.59f, 0.0f};
       VkClearValue ClearValue;
       ClearValue.color = ClearColor;
 
