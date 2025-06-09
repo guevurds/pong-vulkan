@@ -7,7 +7,7 @@
 class Bola : public Scene::Object {
  using Object::Object;
 
- void update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) override {
+ void update() override {
 
    static float foo = 0.0f;
       static float movement = 0.000f;
@@ -18,28 +18,10 @@ class Bola : public Scene::Object {
         movement = -movement;
       }
 
-    //Ajustar para aplicar em todos
-    // Cria a matriz de modelo (translação)
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(foo, 0.0f, 0.0f));
 
-    // (opcional) se quiser identidade no view
-    glm::mat4 view = glm::mat4(1.0f);
-
-    // Corrige a projeção com aspecto da janela (isso resolve a distorção!)
-    float aspect = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
-    glm::mat4 proj = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
-
-    // Para Vulkan: inverte Y da projeção ortográfica
-    proj[1][1] *= -1.0f;
-
-    // Multiplica tudo: World * View * Projection
-    glm::mat4 WVP = proj * view * model;
-
-    UniformData ubo {};
-    ubo.WVP = WVP;
-    ubo.textureIndex = 0;
-
-    uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos); 
+    m_transform = model;
+    m_textureIndex = 1;
  }
 
 };
@@ -67,4 +49,4 @@ std::vector<Vertex> createCircle() {
 }
 
 
-// static Bola bola(createCircle());
+static Bola bola(createCircle());

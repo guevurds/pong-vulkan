@@ -44,18 +44,18 @@ namespace MyVK {
     return rgba;
   }
 
-  std::vector<Vertex> FontText::TextToQuad(const char* text, float posx, float posy) {
+  std::vector<Vertex> FontText::TextToQuad(const char* text) {
 
     std::vector<Vertex> vertices;
-    float x = posx;
-    float y = posy; // y fixo para linha do texto
+    float x = 640;
+    float y = 360; // y fixo para linha do texto
 
     auto NormalizeX = [](float px) {
       return (px / WINDOW_WIDTH) * 2.0f - 1.0f;
     };
 
     auto NormalizeY = [](float py) {
-      return -(1.0f - (py / WINDOW_HEIGHT) * 2.0f);
+      return (1.0f - (py / WINDOW_HEIGHT) * 2.0f); // antes eu invertia aqui mas vou inverter no render pra deixar as posições iguais ao do plano cartesiano
     };
 
     for(int i =0; text[i]; i++) {

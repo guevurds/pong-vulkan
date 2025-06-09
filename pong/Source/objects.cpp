@@ -8,11 +8,66 @@ using namespace Scene;
 
 bool key_pressed[2] = {false, false};
 
+vector<Vertex> baseQuad () {
+  return {
+    Vertex({-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}),
+    Vertex({ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}),
+    Vertex({ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}),
+    Vertex({-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}),
+    Vertex({ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}),
+    Vertex({-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f})
+  };
+}
+
 Object::Object(vector<Vertex> vertices): m_verts(vertices) {
   m_index = getAll().size();
   m_offset = getAll().size() * sizeof(UniformData);
   m_vertexCount = vertices.size();
   getAll().push_back(this);
+  m_textureIndex = 1;
+  m_transform = glm::mat4(1.0);
+  m_size = {
+    .w = 1.0f,
+    .h = 1.0f
+  };
+  m_position = {
+    .x = 0.0f,
+    .y = 0.0f
+  };
+}
+
+Object::Object(vector<Vertex> vertices, uint32_t texture): Object(vertices) {
+     m_textureIndex = texture;
+}
+
+Object::Object(float x, float y, float w, float h): Object(baseQuad()) {
+  m_size = {
+    .w = w,
+    .h = h
+  };
+  m_position = {
+    .x = x,
+    .y = y
+  };
+}
+
+Object::Object(vector<Vertex> vertices, float x, float y, float w, float h): Object(vertices) {
+  m_size = {
+    .w = w,
+    .h = h
+  };
+  m_position = {
+    .x = x,
+    .y = y
+  };
+}
+
+Object::Object(vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h): Object(vertices, x, y, w, h) {
+  m_textureIndex = texture;
+}
+
+Object::Object(float x, float y, float w, float h, uint32_t texture): Object(x, y, w, h) {
+  m_textureIndex = texture;
 }
 
 Object::~Object() {
@@ -24,20 +79,36 @@ int Object::getObjectsNumber() {
   return size;
 }
 
-void Object::update(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) {
-  glm::mat4 Transform = glm::mat4(1.0);
-  UniformData ubo {
-    .WVP = Transform,
-    .textureIndex = 0
-  };
-  uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos);
-}
+void Object::update() {}
 
 void Object::updateAll(MyVK::BufferAndMemory& uniformBuffer) {
   auto& lista = getAll();
   for(size_t i = 0; i < lista.size(); i++) {
-    lista[i]->update(uniformBuffer, i * sizeof(UniformData));
+    lista[i]->internalUpdate(uniformBuffer, i * sizeof(UniformData));
   }
+}
+
+void Object::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) {
+    update();
+    // corrigir distorcoes
+    float aspect = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
+    glm::mat4 proj = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
+
+    glm::vec3 position = {m_position.x, m_position.y, 0.f};
+    glm::vec3 size = {m_size.w, m_size.h, 1.0f};
+
+    m_transform = glm::translate(glm::mat4(1.0f), position);
+    m_transform = glm::scale(m_transform, size);
+
+    proj[1][1] *= -1.0f; // inverte y para ficar como plano cartesiano
+
+    glm::mat4 WVP = proj * glm::mat4(1.0f) * m_transform;
+
+    UniformData ubo {
+      .WVP = WVP,
+      .textureIndex = m_textureIndex
+    };
+  uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos);
 }
 
 void Object::createVertexBuffer(VkDevice& device, MyVK::VulkanCore& vkCore) {
@@ -56,7 +127,7 @@ void Object::createVertexBufferAll(VkDevice& device, MyVK::VulkanCore& vkCore) {
   }
 }
 
-void Object::recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) const{
+void Object::recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) const {
   pPipeline->Bind(cmdBufs[index], index, m_offset);
   VkDeviceSize vbOffset = 0;
   vkCmdBindVertexBuffers(

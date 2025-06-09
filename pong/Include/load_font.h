@@ -12,7 +12,7 @@ namespace MyVK {
             FontText(const char* font_path); 
 
             std::vector<unsigned char> LoadFontAtlas();
-            std::vector<Vertex> TextToQuad(const char* text, float posx, float posy);
+            std::vector<Vertex> TextToQuad(const char* text);
         private:
             unsigned char m_ttf_buffer[1<<20]; // 1MB 
             unsigned char m_bitmap[512*512]; // tamanho do atlas
