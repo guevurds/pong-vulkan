@@ -3,6 +3,7 @@
 
 using namespace Scene;
 
+MyVK::FontText font_roboto("Textures/playfair_font.ttf");
 class Bot : public Object {
   public: 
     using Object::Object;
@@ -95,9 +96,9 @@ class Texto : public Object {
         contador=0;
         showNumber++;
         if(showNumber >= 10) {
-          updateVertexBufferMapped(MyVK::TextToQuad(std::to_string(showNumber).c_str(), WINDOW_WIDTH/2, 36.0f));
+          updateVertexBufferMapped(font_roboto.TextToQuad(("Bot: " + std::to_string(showNumber)).c_str(), (WINDOW_WIDTH/2)/2, 36.0f));
         } else {
-          updateVertexBufferMapped(MyVK::TextToQuad(("0" + std::to_string(showNumber)).c_str(), WINDOW_WIDTH/2, 36.0f));
+          updateVertexBufferMapped(font_roboto.TextToQuad(("Bot: 0" + std::to_string(showNumber)).c_str(), (WINDOW_WIDTH/2)/2, 36.0f));
         }
         
       }
@@ -111,4 +112,4 @@ class Texto : public Object {
     }
 };
 
-static Texto text(MyVK::TextToQuad("00", WINDOW_WIDTH/2, 36.0f)); 
+static Texto placarBot(font_roboto.TextToQuad("Bot: 00", (WINDOW_WIDTH/2)/2, 36.0f)); 
