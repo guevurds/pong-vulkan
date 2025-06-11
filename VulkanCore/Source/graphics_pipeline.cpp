@@ -188,8 +188,8 @@ namespace MyVK{
   }
 
   void GraphicsPipeline::CreateDescriptorPool(int NumImages) {
-    printf("numero de images: %i", NumImages);
-    std::vector<VkDescriptorPoolSize> PoolSizes(1);
+    printf("numero de images: %i\n", NumImages);
+    std::vector<VkDescriptorPoolSize> PoolSizes(2);
 
     // PoolSizes[0] = {
     //   .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -199,6 +199,12 @@ namespace MyVK{
     PoolSizes[0] = {
       .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
       .descriptorCount = (u32)(NumImages)
+    };
+
+    PoolSizes[1] = {
+      .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      // .descriptorCount = (u32)(NumImages)
+      .descriptorCount = (u32)(NumImages * 3)
     };
 
 

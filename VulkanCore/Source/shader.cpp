@@ -48,9 +48,9 @@ namespace MyVK {
       .language = GLSLANG_SOURCE_GLSL,
       .stage = Stage,
       .client = GLSLANG_CLIENT_VULKAN,
-      .client_version = GLSLANG_TARGET_VULKAN_1_1,
+      .client_version = GLSLANG_TARGET_VULKAN_1_0,
       .target_language = GLSLANG_TARGET_SPV,
-      .target_language_version = GLSLANG_TARGET_SPV_1_3,
+      .target_language_version = GLSLANG_TARGET_SPV_1_0,
       .code = pShaderCode,
       .default_version = 100,
       .default_profile = GLSLANG_NO_PROFILE,
@@ -59,6 +59,18 @@ namespace MyVK {
       .messages = GLSLANG_MSG_DEFAULT_BIT,
       .resource = (const glslang_resource_t *)GetDefaultResources() // alternativa para glslang_default_resources()
     };
+
+    // VkPhysicalDeviceProperties deviceProperties;
+    // vkGetPhysicalDeviceProperties(Device, &deviceProperties);
+
+
+    // if ((deviceProperties->apiVersion >> 22) >= 1) {
+    //   input.client_version = GLSLANG_TARGET_VULKAN_1_1;
+    //   input.target_language_version = GLSLANG_TARGET_SPV_1_3;
+    // } else {
+    //   input.client_version = GLSLANG_TARGET_VULKAN_1_0;
+    //   input.target_language_version = GLSLANG_TARGET_SPV_1_0;
+    // }
 
     glslang_shader_t* shader = glslang_shader_create(&input);
 
