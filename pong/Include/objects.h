@@ -9,9 +9,6 @@
 #include "my_vulkan_graphics_pipeline.h"
 #include "my_vulkan_core.h"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-
 // struct Vertex {
 //   Vertex(const glm::vec3& p, const glm::vec2& t) {
 //     Pos = p;
@@ -28,8 +25,6 @@ struct alignas(256) UniformData {
   alignas(4) int padding[3]; // 12 bytes para alinhar para 16
   alignas(4) int paddingExtra[44]; // 176 bytes extras para fechar 256
 };
-
-extern bool key_pressed[2];
 
 namespace Scene {
   struct Size {
@@ -65,17 +60,18 @@ namespace Scene {
 
       Position m_position;
       Size m_size;
+      uint32_t m_index;
 
     protected:
       virtual void update();
 
       glm::mat4 m_transform;
       uint32_t m_textureIndex;
+
+      static std::vector<Object*>& getAll();
     
     private: 
       void internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos);
-
-      static std::vector<Object*>& getAll();
 
       std::vector<Vertex> m_verts;
       MyVK::SimpleMesh m_mesh;
@@ -84,7 +80,6 @@ namespace Scene {
       MyVK::VulkanCore m_vkCore;
       MyVK::GraphicsPipeline* m_pPipeline;
       std::vector<VkCommandBuffer> m_cmdBufs;
-      uint32_t m_index;
       VkDevice m_device;
   };
 }

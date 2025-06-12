@@ -1,4 +1,5 @@
 #include "load_font.h"
+#include "game.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"

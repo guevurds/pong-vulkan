@@ -1,4 +1,5 @@
 #include "objects.h"
+#include "game.h"
 // #include <cmath> 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -9,19 +10,59 @@ class Bola : public Scene::Object {
 
  void update() override {
 
-   static float foo = 0.0f;
-      static float movement = 0.000f;
+   static float foo = m_position.y;
+      static float movement = base_speed;
+      static float movementX = base_speed;
       foo += movement;
-      if (foo >= 0.9f) {
+      if (foo >= 0.95f && movement > 0) {
         movement = -movement;
-      } else if (foo <= -0.9f) {
+      } else if (foo <= -0.95f && movement < 0) {
         movement = -movement;
       }
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(foo, 0.0f, 0.0f));
+      
+      if (m_position.x >= 1.5f && movementX > 0) {
+        movementX = -movementX;
+      } else if (m_position.x <= -1.5f && movementX < 0) {
+        movementX = -movementX;
+      }
 
-    m_transform = model;
-    m_textureIndex = 1;
+      int hit_index = hitbox();
+
+      if(hit_index == 0 && movementX < 0) {
+        movementX = -movementX;
+      } else if (hit_index == 1 && movementX > 0) {
+        movementX = -movementX;
+      }
+      
+      m_position.y = foo;
+      m_position.x += movementX;
+ }
+
+ int hitbox() {
+  auto& objects = getAll();
+
+  float m_x1 = m_position.x + m_size.w/2; // direita
+  float m_x2 = m_position.x - m_size.w/2; // esquerda
+  float m_y1 = m_position.y + m_size.h/2; // cima
+  float m_y2 = m_position.y - m_size.h/2; // baixo
+
+  for (auto obj:objects) {
+    if(obj->m_index == m_index) continue;
+
+    float x1 = obj->m_position.x + obj->m_size.w/2;
+    float x2 = obj->m_position.x - obj->m_size.w/2;
+    float y1 = obj->m_position.y + obj->m_size.h/2;
+    float y2 = obj->m_position.y - obj->m_size.h/2;
+
+    bool overlayX = (x1 > m_x2) && (x2 < m_x1);
+    bool overlayY = (y1> m_y2) && (y2 < m_y1);
+
+    if (overlayX&&overlayY) {
+      return obj->m_index;
+    }
+  }
+  return -1;
  }
 
 };
@@ -49,4 +90,4 @@ std::vector<Vertex> createCircle() {
 }
 
 
-static Bola bola(createCircle());
+static Bola bola(0.0f, 0.0f, 0.1f, 0.1f, 1);

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "objects.h"
+#include "game.h"
 
 using namespace std;
 using namespace Scene;

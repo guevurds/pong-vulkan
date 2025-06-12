@@ -20,14 +20,12 @@
 #include "load_font.h"
 
 #include "objects.h"
+#include "game.h"
 
 const int TARGET_FPS = 60; // para controlar o framerate
 const std::chrono::duration<double> TARGET_FRAME_DURATION(1.0 / TARGET_FPS); // para controlar o framerate
 
 int max_tex;
-
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
 
 void GLFW_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS)) {

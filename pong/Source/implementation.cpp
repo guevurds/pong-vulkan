@@ -1,7 +1,10 @@
 #include "objects.h"
 #include "load_font.h"
+#include "game.h"
 
 using namespace Scene;
+
+float base_speed = 0.02f;
 
 MyVK::FontText font_roboto("Textures/playfair_font.ttf");
 class Bot : public Object {
@@ -10,12 +13,12 @@ class Bot : public Object {
 
     void update() override {
       static float foo = m_position.y;
-      static float movement = 0.006f;
+      static float movement = base_speed;
 
       foo += movement;
-      if (foo >= 0.9f && movement > 0) {
+      if (foo >= 0.8f && movement > 0) {
         movement = -movement;
-      } else if (foo <= -0.9f && movement < 0) {
+      } else if (foo <= -0.8f && movement < 0) {
         movement = -movement;
       }
       
@@ -29,16 +32,16 @@ class Player : public Object {
 
     void update() override {
       static float position = m_position.y;
-      static float movement = 0.006f;
+      static float movement = base_speed;
 
       if(key_pressed[0]) { //down
-        if(position >= -0.9f) {
+        if(position >= -0.8f) {
           position -= movement;
         }
       }
 
        if(key_pressed[1]) { //up
-        if(position <= 0.9f) {
+        if(position <= 0.8f) {
           position += movement;
         }
       }
@@ -49,9 +52,9 @@ class Player : public Object {
 
 // stb carrega imagens com 0,0 = bottom left
 
-static Bot bot(-1.3f, 0.9f, 0.08f, 0.2f, 1);
+static Bot bot(-1.3f, 0.9f, 0.08f, 0.4f, 1);
 
-static Player player(1.3f, 0.9f, 0.08f, 0.2f, 1);
+static Player player(1.3f, 0.9f, 0.08f, 0.4f, 1);
 
 class Texto : public Object {
   public: 
