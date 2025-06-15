@@ -20,55 +20,46 @@ vector<Vertex> baseQuad () {
   };
 }
 
-VisibleObject::VisibleObject(vector<Vertex> vertices): m_verts(vertices) {
+void VisibleObject::construct(vector<Vertex> vertices) {
+  Init(vertices);
+}
+
+void VisibleObject::construct(vector<Vertex> vertices, uint32_t texture) {
+  Init(vertices, {},{},texture);
+}
+
+void VisibleObject::construct(float x, float y, float w, float h) {
+  Init(baseQuad(),{x,y},{w,h});
+}
+
+void VisibleObject::construct(vector<Vertex> vertices, float x, float y, float w, float h) {
+  Init(vertices, {x,y},{w,h});
+}
+
+void VisibleObject::construct(vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h) {
+  Init(vertices, {x,y},{w,h}, texture);
+}
+
+void VisibleObject::construct(float x, float y, float w, float h, uint32_t texture) {
+  Init(baseQuad(), {x,y},{w,h}, texture);
+}
+
+void VisibleObject::Init(vector<Vertex> vertices, Position pos, Size size, uint32_t tex) {
+  m_verts = vertices;
   m_index = getAll().size();
   m_offset = getAll().size() * sizeof(UniformData);
-  m_vertexCount = vertices.size();
+  m_vertexCount = m_verts.size();
   getAll().push_back(this);
-  m_textureIndex = 1;
+  m_textureIndex = tex;
   m_transform = glm::mat4(1.0);
   m_size = {
-    .w = 1.0f,
-    .h = 1.0f
+    .w = size.w,
+    .h = size.h
   };
   m_position = {
-    .x = 0.0f,
-    .y = 0.0f
+    .x = pos.x,
+    .y = pos.y
   };
-}
-
-VisibleObject::VisibleObject(vector<Vertex> vertices, uint32_t texture): VisibleObject(vertices) {
-     m_textureIndex = texture;
-}
-
-VisibleObject::VisibleObject(float x, float y, float w, float h): VisibleObject(baseQuad()) {
-  m_size = {
-    .w = w,
-    .h = h
-  };
-  m_position = {
-    .x = x,
-    .y = y
-  };
-}
-
-VisibleObject::VisibleObject(vector<Vertex> vertices, float x, float y, float w, float h): VisibleObject(vertices) {
-  m_size = {
-    .w = w,
-    .h = h
-  };
-  m_position = {
-    .x = x,
-    .y = y
-  };
-}
-
-VisibleObject::VisibleObject(vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h): VisibleObject(vertices, x, y, w, h) {
-  m_textureIndex = texture;
-}
-
-VisibleObject::VisibleObject(float x, float y, float w, float h, uint32_t texture): VisibleObject(x, y, w, h) {
-  m_textureIndex = texture;
 }
 
 VisibleObject::~VisibleObject() {
@@ -171,4 +162,10 @@ void VisibleObject::updateVertexBufferMapped(std::vector<Vertex> newVerts) {
     vkUnmapMemory(m_device, m_mesh.m_vb.m_mem);
     // m_vertexCount = newVerts.size();
   }
+}
+
+// implementation physicalObject
+
+void PhysicalObject::Init() { 
+  printf("this is work?");
 }

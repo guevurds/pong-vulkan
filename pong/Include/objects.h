@@ -37,12 +37,10 @@ namespace Scene {
   };
   class VisibleObject {
     public:
-      VisibleObject(std::vector<Vertex> vertices);
-      VisibleObject(std::vector<Vertex> vertices, uint32_t texture);
-      VisibleObject(float x, float y, float w, float h);
-      VisibleObject(float x, float y, float w, float h, uint32_t texture);
-      VisibleObject(std::vector<Vertex> vertices, float x, float y, float w, float h);
-      VisibleObject(std::vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h);
+      template<typename... Args>
+      VisibleObject(Args&&... args) {
+        construct(std::forward<Args>(args)...);
+      }
       
       virtual ~VisibleObject();
       
@@ -73,6 +71,15 @@ namespace Scene {
     private: 
       void internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos);
 
+      void construct(std::vector<Vertex> vertices);
+      void construct(std::vector<Vertex> vertices, uint32_t texture);
+      void construct(float x, float y, float w, float h);
+      void construct(float x, float y, float w, float h, uint32_t texture);
+      void construct(std::vector<Vertex> vertices, float x, float y, float w, float h);
+      void construct(std::vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h);
+
+      void Init(std::vector<Vertex> vertices, Position pos = {0.0f, 0.0f}, Size size = {1.0f, 1.0f}, uint32_t tex = 1);
+
       std::vector<Vertex> m_verts;
       MyVK::SimpleMesh m_mesh;
       uint32_t m_offset;
@@ -81,6 +88,17 @@ namespace Scene {
       MyVK::GraphicsPipeline* m_pPipeline;
       std::vector<VkCommandBuffer> m_cmdBufs;
       VkDevice m_device;
+  };
+
+  class PhysicalObject : public VisibleObject{
+    public:
+      template<typename... Args>
+      PhysicalObject(Args&&... args): VisibleObject::VisibleObject(std::forward<Args>(args)...) {
+        Init();
+      }
+
+    private:
+      void Init();
   };
 }
 

@@ -26,9 +26,9 @@ class Bot : public VisibleObject {
     }
 };
 
-class Player : public VisibleObject {
+class Player : public PhysicalObject {
   public: 
-    using VisibleObject::VisibleObject;
+    using PhysicalObject::PhysicalObject;
 
     void update() override {
       static float position = m_position.y;
