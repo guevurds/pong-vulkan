@@ -147,8 +147,8 @@ class VulkanApp {
 
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::VisibleObject::getObjectsNumber() * sizeof(UniformData));
-      MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/branco.png");
-      MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("Textures/vermelho_verde.png");
+      MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("pong/Textures/branco.png");
+      MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("pong/Textures/vermelho_verde.png");
       std::vector<unsigned char> rgba = font_roboto.LoadFontAtlas();
       MyVK::ImageAndMemory font = m_vkCore.LoadTextureFromMemory(rgba.data(), 512, 512, VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -160,8 +160,8 @@ class VulkanApp {
     }
 
     void CreateShaders() {
-      m_vs = MyVK::CreateShaderModuleFromText(m_device, "test.vert");
-      m_fs = MyVK::CreateShaderModuleFromText(m_device, "test.frag");
+      m_vs = MyVK::CreateShaderModuleFromText(m_device, "pong/test.vert");
+      m_fs = MyVK::CreateShaderModuleFromText(m_device, "pong/test.frag");
     }
 
     void CreatePipeline() {

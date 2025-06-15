@@ -6,7 +6,7 @@ using namespace Scene;
 
 float base_speed = 0.02f;
 
-MyVK::FontText font_roboto("Textures/playfair_font.ttf");
+MyVK::FontText font_roboto("pong/Textures/playfair_font.ttf");
 class Bot : public VisibleObject {
   public: 
     using VisibleObject::VisibleObject;

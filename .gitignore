@@ -2,3 +2,5 @@
 *.exe
 pong/a.exe
 a.exe
+*.o
+*.d

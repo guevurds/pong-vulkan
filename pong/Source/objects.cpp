@@ -96,10 +96,9 @@ void VisibleObject::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDevic
 
     glm::mat4 WVP = proj * glm::mat4(1.0f) * m_transform;
 
-    UniformData ubo {
-      .WVP = WVP,
-      .textureIndex = m_textureIndex
-    };
+    UniformData ubo {};
+    ubo.WVP = WVP;
+    ubo.textureIndex = m_textureIndex;
   uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos);
 }
 
