@@ -35,16 +35,16 @@ namespace Scene {
     float x;
     float y;
   };
-  class Object {
+  class VisibleObject {
     public:
-      Object(std::vector<Vertex> vertices);
-      Object(std::vector<Vertex> vertices, uint32_t texture);
-      Object(float x, float y, float w, float h);
-      Object(float x, float y, float w, float h, uint32_t texture);
-      Object(std::vector<Vertex> vertices, float x, float y, float w, float h);
-      Object(std::vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h);
+      VisibleObject(std::vector<Vertex> vertices);
+      VisibleObject(std::vector<Vertex> vertices, uint32_t texture);
+      VisibleObject(float x, float y, float w, float h);
+      VisibleObject(float x, float y, float w, float h, uint32_t texture);
+      VisibleObject(std::vector<Vertex> vertices, float x, float y, float w, float h);
+      VisibleObject(std::vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h);
       
-      virtual ~Object();
+      virtual ~VisibleObject();
       
       static int getObjectsNumber();
      
@@ -68,7 +68,7 @@ namespace Scene {
       glm::mat4 m_transform;
       uint32_t m_textureIndex;
 
-      static std::vector<Object*>& getAll();
+      static std::vector<VisibleObject*>& getAll();
     
     private: 
       void internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos);

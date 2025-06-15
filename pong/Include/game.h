@@ -1,7 +1,7 @@
 #pragma once
 
-#define WINDOW_WIDTH 880
-#define WINDOW_HEIGHT 500
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
 
 extern bool key_pressed[2];
 

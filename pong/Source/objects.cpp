@@ -20,7 +20,7 @@ vector<Vertex> baseQuad () {
   };
 }
 
-Object::Object(vector<Vertex> vertices): m_verts(vertices) {
+VisibleObject::VisibleObject(vector<Vertex> vertices): m_verts(vertices) {
   m_index = getAll().size();
   m_offset = getAll().size() * sizeof(UniformData);
   m_vertexCount = vertices.size();
@@ -37,11 +37,11 @@ Object::Object(vector<Vertex> vertices): m_verts(vertices) {
   };
 }
 
-Object::Object(vector<Vertex> vertices, uint32_t texture): Object(vertices) {
+VisibleObject::VisibleObject(vector<Vertex> vertices, uint32_t texture): VisibleObject(vertices) {
      m_textureIndex = texture;
 }
 
-Object::Object(float x, float y, float w, float h): Object(baseQuad()) {
+VisibleObject::VisibleObject(float x, float y, float w, float h): VisibleObject(baseQuad()) {
   m_size = {
     .w = w,
     .h = h
@@ -52,7 +52,7 @@ Object::Object(float x, float y, float w, float h): Object(baseQuad()) {
   };
 }
 
-Object::Object(vector<Vertex> vertices, float x, float y, float w, float h): Object(vertices) {
+VisibleObject::VisibleObject(vector<Vertex> vertices, float x, float y, float w, float h): VisibleObject(vertices) {
   m_size = {
     .w = w,
     .h = h
@@ -63,33 +63,33 @@ Object::Object(vector<Vertex> vertices, float x, float y, float w, float h): Obj
   };
 }
 
-Object::Object(vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h): Object(vertices, x, y, w, h) {
+VisibleObject::VisibleObject(vector<Vertex> vertices, uint32_t texture, float x, float y, float w, float h): VisibleObject(vertices, x, y, w, h) {
   m_textureIndex = texture;
 }
 
-Object::Object(float x, float y, float w, float h, uint32_t texture): Object(x, y, w, h) {
+VisibleObject::VisibleObject(float x, float y, float w, float h, uint32_t texture): VisibleObject(x, y, w, h) {
   m_textureIndex = texture;
 }
 
-Object::~Object() {
+VisibleObject::~VisibleObject() {
   m_mesh.Destroy(m_device);
 }
 
-int Object::getObjectsNumber() {
+int VisibleObject::getObjectsNumber() {
   int size = getAll().size();
   return size;
 }
 
-void Object::update() {}
+void VisibleObject::update() {}
 
-void Object::updateAll(MyVK::BufferAndMemory& uniformBuffer) {
+void VisibleObject::updateAll(MyVK::BufferAndMemory& uniformBuffer) {
   auto& lista = getAll();
   for(size_t i = 0; i < lista.size(); i++) {
     lista[i]->internalUpdate(uniformBuffer, i * sizeof(UniformData));
   }
 }
 
-void Object::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) {
+void VisibleObject::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) {
     update();
     // corrigir distorcoes
     float aspect = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
@@ -112,7 +112,7 @@ void Object::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize m
   uniformBuffer.Update(m_device, &ubo, sizeof(ubo), memPos);
 }
 
-void Object::createVertexBuffer(VkDevice& device, MyVK::VulkanCore& vkCore) {
+void VisibleObject::createVertexBuffer(VkDevice& device, MyVK::VulkanCore& vkCore) {
   m_vkCore = vkCore;
   m_device = device;
   m_mesh.m_vertexBufferSize = sizeof(m_verts[0]) * m_verts.size();
@@ -121,14 +121,14 @@ void Object::createVertexBuffer(VkDevice& device, MyVK::VulkanCore& vkCore) {
   m_mesh.m_vb = m_vkCore.CreateVertexBuffer(m_verts.data(), m_mesh.m_vertexBufferSize);
 }
 
-void Object::createVertexBufferAll(VkDevice& device, MyVK::VulkanCore& vkCore) {
+void VisibleObject::createVertexBufferAll(VkDevice& device, MyVK::VulkanCore& vkCore) {
   auto& lista = getAll();
   for(size_t i = 0; i < lista.size(); i++) {
     lista[i]->createVertexBuffer(device, vkCore);
   }
 }
 
-void Object::recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) const {
+void VisibleObject::recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) const {
   pPipeline->Bind(cmdBufs[index], index, m_offset);
   VkDeviceSize vbOffset = 0;
   vkCmdBindVertexBuffers(
@@ -144,7 +144,7 @@ void Object::recordCommandBuffer(MyVK::GraphicsPipeline* pPipeline, std::vector<
   vkCmdDraw(cmdBufs[index], m_vertexCount, InstaceCout, FirstVertex, FirstInstance);
 }
 
-void Object::recordCommandBufferAll(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) {
+void VisibleObject::recordCommandBufferAll(MyVK::GraphicsPipeline* pPipeline, std::vector<VkCommandBuffer>& cmdBufs, int index) {
 
   auto& list = getAll();
   for(size_t i = 0; i < list.size(); i++) {
@@ -154,12 +154,12 @@ void Object::recordCommandBufferAll(MyVK::GraphicsPipeline* pPipeline, std::vect
   }
 }
 
-vector<Object*>& Object::getAll() {
-  static vector<Object*> all;
+vector<VisibleObject*>& VisibleObject::getAll() {
+  static vector<VisibleObject*> all;
   return all;
 }
 
-void Object::updateVertexBufferMapped(std::vector<Vertex> newVerts) {
+void VisibleObject::updateVertexBufferMapped(std::vector<Vertex> newVerts) {
    m_verts = newVerts;
   if(newVerts.size() * sizeof(Vertex) > m_mesh.m_vertexBufferSize) {
     // createVertexBuffer(m_device, m_vkCore);

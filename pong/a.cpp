@@ -84,7 +84,7 @@ class VulkanApp {
       m_pQueue = m_vkCore.GetQueue();
       m_renderPass = m_vkCore.CreateSimpleRenderPass();
       m_frameBuffers = m_vkCore.CreateFramebuffers(m_renderPass);
-      max_tex = Scene::Object::getObjectsNumber();
+      max_tex = Scene::VisibleObject::getObjectsNumber();
       CreateShaders();
       CreateVertexBuffer();
       CreateUniformBuffers();
@@ -142,11 +142,11 @@ class VulkanApp {
       //   m_meshs[i].m_vb = m_vkCore.CreateVertexBuffer(objects[i].data(), m_meshs[i].m_vertexBufferSize);
       // }
 
-      Scene::Object::createVertexBufferAll(m_device, m_vkCore);
+      Scene::VisibleObject::createVertexBufferAll(m_device, m_vkCore);
     }
 
     void CreateUniformBuffers() {
-      m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::Object::getObjectsNumber() * sizeof(UniformData));
+      m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::VisibleObject::getObjectsNumber() * sizeof(UniformData));
       MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("Textures/branco.png");
       MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("Textures/vermelho_verde.png");
       std::vector<unsigned char> rgba = font_roboto.LoadFontAtlas();
@@ -198,7 +198,7 @@ class VulkanApp {
         RenderPassBeginInfo.framebuffer = m_frameBuffers[i];
         vkCmdBeginRenderPass(m_cmdBufs[i], &RenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        Scene::Object::recordCommandBufferAll(m_pPipeline, m_cmdBufs, i);
+        Scene::VisibleObject::recordCommandBufferAll(m_pPipeline, m_cmdBufs, i);
 
         // for (int mesh=0; mesh < m_meshs.size(); mesh++) {
         //   m_pPipeline->Bind(m_cmdBufs[i], i, mesh * sizeof(UniformData));
@@ -265,7 +265,7 @@ class VulkanApp {
       // m_uniformBuffers[ImageIndex].Update(m_device, &Translate, sizeof(Translate), 0);
       // m_uniformBuffers[ImageIndex].Update(m_device, &TranslatePlayer, sizeof(TranslatePlayer), sizeof(UniformData));
 
-      Scene::Object::updateAll(m_uniformBuffers[ImageIndex]);
+      Scene::VisibleObject::updateAll(m_uniformBuffers[ImageIndex]);
     }
 
     GLFWwindow* m_pWindow = NULL;

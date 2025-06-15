@@ -5,8 +5,8 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-class Bola : public Scene::Object {
- using Object::Object;
+class Bola : public Scene::VisibleObject {
+ using VisibleObject::VisibleObject;
 
  void update() override {
 

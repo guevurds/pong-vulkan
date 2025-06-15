@@ -7,9 +7,9 @@ using namespace Scene;
 float base_speed = 0.02f;
 
 MyVK::FontText font_roboto("Textures/playfair_font.ttf");
-class Bot : public Object {
+class Bot : public VisibleObject {
   public: 
-    using Object::Object;
+    using VisibleObject::VisibleObject;
 
     void update() override {
       static float foo = m_position.y;
@@ -26,9 +26,9 @@ class Bot : public Object {
     }
 };
 
-class Player : public Object {
+class Player : public VisibleObject {
   public: 
-    using Object::Object;
+    using VisibleObject::VisibleObject;
 
     void update() override {
       static float position = m_position.y;
@@ -56,9 +56,9 @@ static Bot bot(-1.3f, 0.9f, 0.08f, 0.4f, 1);
 
 static Player player(1.3f, 0.9f, 0.08f, 0.4f, 1);
 
-class Texto : public Object {
+class Texto : public VisibleObject {
   public: 
-    using Object::Object;
+    using VisibleObject::VisibleObject;
 
     void update() override {
       static int contador = 0;
@@ -77,7 +77,7 @@ class Texto : public Object {
     }
 };
 
-static Object placarBot(
+static VisibleObject placarBot(
   font_roboto.TextToQuad("Bot: 00"), 0,
    0.0f, 0.9f, 1.0f, 1.0f
   ); 
