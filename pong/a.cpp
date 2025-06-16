@@ -148,7 +148,7 @@ class VulkanApp {
     void CreateUniformBuffers() {
       m_uniformBuffers= m_vkCore.CreateUniformBuffers(Scene::VisibleObject::getObjectsNumber() * sizeof(UniformData));
       MyVK::ImageAndMemory tex1 = m_vkCore.LoadTexture("pong/Textures/branco.png");
-      MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("pong/Textures/vermelho_verde.png");
+      MyVK::ImageAndMemory tex2 = m_vkCore.LoadTexture("pong/Textures/transparent.png");
       std::vector<unsigned char> rgba = font_roboto.LoadFontAtlas();
       MyVK::ImageAndMemory font = m_vkCore.LoadTextureFromMemory(rgba.data(), 512, 512, VK_FORMAT_R8G8B8A8_UNORM);
 

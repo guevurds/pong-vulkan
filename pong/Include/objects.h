@@ -34,6 +34,16 @@ namespace Scene {
   struct Position {
     float x;
     float y;
+
+    Position operator+(const Position& other) {
+      return Position{x + other.x, y + other.y};
+    }
+
+    Position& operator+=(const Position& other) {
+      x += other.x;
+      y += other.y;
+      return *this;
+    }
   };
   class VisibleObject {
     public:
@@ -62,6 +72,7 @@ namespace Scene {
 
     protected:
       virtual void update();
+      virtual void onUpdate();
 
       glm::mat4 m_transform;
       uint32_t m_textureIndex;
@@ -90,15 +101,42 @@ namespace Scene {
       VkDevice m_device;
   };
 
+  struct InColision {
+      bool x = false;
+      bool y = false;
+  };
+
+  struct Hitbox {
+    float x1;
+    float x2;
+    float y1;
+    float y2;
+  };
+
   class PhysicalObject : public VisibleObject{
     public:
       template<typename... Args>
       PhysicalObject(Args&&... args): VisibleObject::VisibleObject(std::forward<Args>(args)...) {
         Init();
       }
+      virtual void isTouchingYou(PhysicalObject& target);
+
+      Position m_velocity;
+    protected:
+      virtual void start();
+      void onUpdate() override;
+      std::vector<PhysicalObject*>& getCollidingObjects();
+
+      InColision m_inColision; // não usado no momento;
+      Hitbox m_hitbox;
 
     private:
       void Init();
+      static std::vector<PhysicalObject*>& getAllPhysicalObjects();
+      std::vector<PhysicalObject*> m_collidingObjects;
+      void calculateCollidingObjects();
+
+      bool m_started = false;
   };
 }
 

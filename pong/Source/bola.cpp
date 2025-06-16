@@ -5,64 +5,44 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-class Bola : public Scene::VisibleObject {
- using VisibleObject::VisibleObject;
+class Bola : public Scene::PhysicalObject {
+ using PhysicalObject::PhysicalObject;
+
+ void start() override {
+  m_velocity = {base_speed, base_speed};
+ }
 
  void update() override {
 
    static float foo = m_position.y;
-      static float movement = base_speed;
-      static float movementX = base_speed;
-      foo += movement;
-      if (foo >= 0.95f && movement > 0) {
-        movement = -movement;
-      } else if (foo <= -0.95f && movement < 0) {
-        movement = -movement;
+      foo += m_velocity.y;
+      if (foo >= 0.95f && m_velocity.y > 0) {
+        m_velocity.y = -m_velocity.y;
+      } else if (foo <= -0.95f && m_velocity.y < 0) {
+        m_velocity.y = -m_velocity.y;
       }
 
       
-      if (m_position.x >= 1.5f && movementX > 0) {
-        movementX = -movementX;
-      } else if (m_position.x <= -1.5f && movementX < 0) {
-        movementX = -movementX;
-      }
+      // if (m_position.x >= 1.5f && m_velocity.x > 0) {
+      //   m_velocity.x = -m_velocity.x;
+      // } else if (m_position.x <= -1.5f && m_velocity.x < 0) {
+      //   m_velocity.x = -m_velocity.x;
+      // }
 
-      int hit_index = hitbox();
+      std::vector<PhysicalObject*> touching = getCollidingObjects();
 
-      if(hit_index == 0 && movementX < 0) {
-        movementX = -movementX;
-      } else if (hit_index == 1 && movementX > 0) {
-        movementX = -movementX;
-      }
+      if(touching.size() > 0) {
+        touching[0]->isTouchingYou(*this);
+      } 
+
+      // if(hit_index == 0 && movementX < 0) {
+      //   movementX = -movementX;
+      // } else if (hit_index == 1 && movementX > 0) {
+      //   movementX = -movementX;
+      // }
       
       m_position.y = foo;
-      m_position.x += movementX;
- }
-
- int hitbox() {
-  auto& objects = getAll();
-
-  float m_x1 = m_position.x + m_size.w/2; // direita
-  float m_x2 = m_position.x - m_size.w/2; // esquerda
-  float m_y1 = m_position.y + m_size.h/2; // cima
-  float m_y2 = m_position.y - m_size.h/2; // baixo
-
-  for (auto obj:objects) {
-    if(obj->m_index == m_index) continue;
-
-    float x1 = obj->m_position.x + obj->m_size.w/2;
-    float x2 = obj->m_position.x - obj->m_size.w/2;
-    float y1 = obj->m_position.y + obj->m_size.h/2;
-    float y2 = obj->m_position.y - obj->m_size.h/2;
-
-    bool overlayX = (x1 > m_x2) && (x2 < m_x1);
-    bool overlayY = (y1> m_y2) && (y2 < m_y1);
-
-    if (overlayX&&overlayY) {
-      return obj->m_index;
-    }
-  }
-  return -1;
+      m_position.x += m_velocity.x;
  }
 
 };

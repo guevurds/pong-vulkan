@@ -73,6 +73,10 @@ int VisibleObject::getObjectsNumber() {
 
 void VisibleObject::update() {}
 
+void VisibleObject::onUpdate() {
+  update();
+}
+
 void VisibleObject::updateAll(MyVK::BufferAndMemory& uniformBuffer) {
   auto& lista = getAll();
   for(size_t i = 0; i < lista.size(); i++) {
@@ -81,7 +85,7 @@ void VisibleObject::updateAll(MyVK::BufferAndMemory& uniformBuffer) {
 }
 
 void VisibleObject::internalUpdate(MyVK::BufferAndMemory& uniformBuffer, VkDeviceSize memPos) {
-    update();
+    onUpdate();
     // corrigir distorcoes
     float aspect = (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT;
     glm::mat4 proj = glm::ortho(-aspect, aspect, -1.0f, 1.0f);
@@ -166,5 +170,61 @@ void VisibleObject::updateVertexBufferMapped(std::vector<Vertex> newVerts) {
 // implementation physicalObject
 
 void PhysicalObject::Init() { 
-  printf("this is work?");
+  getAllPhysicalObjects().push_back(this);
+  m_velocity = {0.0f, 0.0f};
+  m_hitbox = { 
+    m_position.x - m_size.w/2, // esquerda
+    m_position.x + m_size.w/2, // direita
+    m_position.y + m_size.h/2, // cima
+    m_position.y - m_size.h/2 // baixo
+  };
+  m_started = false;
 }
+
+vector<PhysicalObject*>& PhysicalObject::getAllPhysicalObjects() {
+  static vector<PhysicalObject*> all;
+  return all;
+}
+
+void PhysicalObject::calculateCollidingObjects() {
+  auto& objects = getAllPhysicalObjects();
+
+  vector<PhysicalObject*> inCollidingObjs;
+
+  for (auto obj:objects) {
+    if(obj->m_index == m_index) continue;
+
+    bool overlayX = (obj->m_hitbox.x1 < m_hitbox.x2) && (obj->m_hitbox.x2 > m_hitbox.x1);
+    bool overlayY = (obj->m_hitbox.y1 > m_hitbox.y2) && (obj->m_hitbox.y2 < m_hitbox.y1);
+
+    if (overlayX&&overlayY) {
+      inCollidingObjs.push_back(obj);
+    }
+  }
+  m_collidingObjects = inCollidingObjs;
+ }
+
+ void PhysicalObject::isTouchingYou(PhysicalObject& target) {}
+
+ void PhysicalObject::onUpdate() {
+  if(!m_started) {
+    start();
+    m_started = true;
+  }
+
+   m_hitbox = { 
+    m_position.x - m_size.w/2, // esquerda
+    m_position.x + m_size.w/2, // direita
+    m_position.y + m_size.h/2, // cima
+    m_position.y - m_size.h/2 // baixo
+  };
+  // m_position += m_velocity;  // melhorar para teste de colisão no futuro
+  calculateCollidingObjects();
+  VisibleObject::onUpdate();
+ }
+
+ std::vector<PhysicalObject*>& PhysicalObject::getCollidingObjects() {
+  return m_collidingObjects;
+ }
+
+ void PhysicalObject::start() {}
