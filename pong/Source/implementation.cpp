@@ -1,8 +1,21 @@
 #include "objects.h"
 #include "load_font.h"
 #include "game.h"
+#include <chrono>
+#include <thread>
+#include <iostream>
+#include <functional>
+
 
 using namespace Scene;
+
+void setTimeout(std::function<void()> func, int delayMs) {
+    std::thread([func, delayMs]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        func();
+    }).detach(); // roda em background
+}
+
 
 float base_speed = 0.02f;
 
@@ -11,25 +24,45 @@ class Bot : public PhysicalObject {
   public: 
     using PhysicalObject::PhysicalObject;
 
+    void start() override{
+      std::vector<VisibleObject *> list = getAll();
+      if(list.size() >= 6) {
+        setMyTarget(*list.at(6)); // 6 é o indice da bola na quantidade atual de elementos do jogo
+      }
+      
+    }
+
     void update() override {
       static float foo = m_position.y;
       static float movement = base_speed;
 
-      foo += movement;
-      if (foo >= 0.8f && movement > 0) {
-        movement = -movement;
-      } else if (foo <= -0.8f && movement < 0) {
-        movement = -movement;
+      if(m_target_pos->y > m_position.y && movement < 0) {
+          movement = -movement;
+      } else if (m_target_pos->y < m_position.y && movement > 0) {
+          movement = -movement;
       }
-      
+
+      if (foo <= 0.8f && movement > 0) {
+        foo += movement;
+      } else if (foo >= -0.8f && movement < 0) {
+        foo += movement;
+      }
+
       m_position.y = foo;
     }
 
     void isTouchingYou(PhysicalObject& target) override{
       if(target.m_velocity.x < 0) {
-        target.m_velocity.x = -target.m_velocity.x;
+        target.m_velocity.x = -target.m_velocity.x*1.2f;
+        target.m_velocity.y = target.m_velocity.y*1.2f;
       }
     }
+
+    Position* m_target_pos;
+      void setMyTarget(VisibleObject& target) {
+      m_target_pos = &target.m_position;
+    }
+
 };
 
 class Player : public PhysicalObject {
@@ -57,7 +90,8 @@ class Player : public PhysicalObject {
 
     void isTouchingYou(PhysicalObject& target) override{
       if(target.m_velocity.x > 0) {
-        target.m_velocity.x = -target.m_velocity.x;
+        target.m_velocity.x = -target.m_velocity.x*1.2f;
+        target.m_velocity.y = target.m_velocity.y*1.2f;
       }
     }
 };
@@ -74,12 +108,21 @@ class Goal: public PhysicalObject {
     void isTouchingYou(PhysicalObject& target) override{
       target.m_position = {0.0f, 0.0f};
       *m_placar = *m_placar + 1;
+      int direction[2];
+      direction[0] = target.m_velocity.x > 0 ? 1 : -1;
+      direction[1] = target.m_velocity.y > 0 ? 1 : -1;
+      target.m_velocity = {0.0f, 0.0f};
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      setTimeout([&target, direction]() {
+        printf("executou direction[0] is %d\n", direction[0]);
+        target.m_velocity = {base_speed*direction[0], base_speed*direction[1]};
+      }, 2000);
     }
 };
 
 // stb carrega imagens com 0,0 = bottom left
 
-static Bot bot(-1.3f, 0.9f, 0.08f, 0.4f, 1);
+static Bot robot(-1.3f, 0.9f, 0.08f, 0.4f, 1);
 
 static Player player(1.3f, 0.9f, 0.08f, 0.4f, 1);
 

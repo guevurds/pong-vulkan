@@ -39,6 +39,8 @@ class Bola : public Scene::PhysicalObject {
       //   movementX = -movementX;
       // } else if (hit_index == 1 && movementX > 0) {
       //   movementX = -movementX;
+
+      // printf("bola pos %f\n",m_position.y);
       // }
       
       m_position.y = foo;
